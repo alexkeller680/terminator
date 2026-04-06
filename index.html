@@ -504,7 +504,6 @@ const LS_SKIP  = 'trm_skip_sync';
 let log = {};
 let scriptUrl = localStorage.getItem(LS_URL) || '';
 let skipSync  = localStorage.getItem(LS_SKIP) === '1';
-let syncing   = false;
 
 function loadLocal() {
   try { log = JSON.parse(localStorage.getItem(LS_LOG)) || {}; }
@@ -594,9 +593,9 @@ async function saveScriptUrl() {
   localStorage.setItem(LS_URL, url);
   localStorage.removeItem(LS_SKIP);
   hideOverlay();
-  setSyncState('synced');
+  setSyncState('syncing');
   render();
-  syncFromDrive().then(render).catch(()=>{});
+  syncFromDrive().then(render).catch(()=>render());
 }
 
 function skipSetup() {
