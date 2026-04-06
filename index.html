@@ -985,6 +985,10 @@ if (!scriptUrl && !skipSync) showOverlay();
 setSyncState(scriptUrl ? 'syncing' : 'local');
 if (scriptUrl) syncFromDrive().then(render).catch(()=>render());
 else render();
+
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && scriptUrl) syncFromDrive().then(render).catch(()=>{});
+});
 </script>
 </body>
 </html>
