@@ -634,12 +634,19 @@ async function syncToDrive(dateStr) {
   if (!scriptUrl) return;
   try {
     setSyncState('syncing');
-    await fetch(scriptUrl, {
+    const res = await fetch(scriptUrl, {
       method: 'POST',
-      mode: 'no-cors',
+      mode: 'cors',
       body: JSON.stringify({ date: dateStr, log: log[dateStr] || {} }),
     });
-    setSyncState('synced');
+    if (!res.ok) { console.error('Sync POST failed:', res.status); setSyncState('error'); return; }
+    const json = await res.json();
+    if (json.ok) {
+      setSyncState('synced');
+    } else {
+      console.error('Sync POST unexpected response:', json);
+      setSyncState('error');
+    }
   } catch(e) {
     setSyncState('error');
   }
