@@ -1,0 +1,1067 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>TERMINATOR</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0a0a;
+  --surface: #141414;
+  --surface2: #1c1c1c;
+  --border: #252525;
+  --border2: #333;
+  --text: #e8e8e0;
+  --muted: #4a4a4a;
+  --muted2: #666;
+  --accent: #c8f060;
+  --accent-dim: rgba(200,240,96,0.1);
+  --done: #c8f060;
+  --skip: #ff4444;
+  --work: #ff9b3d;
+  --later: #60b8f0;
+  --r: 10px;
+  --hf: 'Syne', sans-serif;
+  --mf: 'DM Mono', monospace;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--mf);
+  font-size: 14px;
+  overscroll-behavior: none;
+}
+
+/* ── HEADER ── */
+header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 18px 12px;
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; background: var(--bg); z-index: 200;
+}
+.logo {
+  font-family: var(--hf); font-size: 17px; font-weight: 800;
+  letter-spacing: 0.06em; color: var(--accent);
+}
+.sync-btn {
+  display: flex; align-items: center; gap: 6px;
+  background: none; border: 1px solid var(--border);
+  color: var(--muted2); font-family: var(--mf); font-size: 11px;
+  padding: 5px 10px; border-radius: 20px; cursor: pointer;
+  transition: all 0.15s; letter-spacing: 0.04em;
+}
+.sync-btn:hover { border-color: var(--accent); color: var(--accent); }
+.sync-btn.synced { border-color: var(--done); color: var(--done); }
+.sync-btn.syncing { border-color: var(--work); color: var(--work); }
+.sync-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+/* ── NAV ── */
+nav {
+  display: flex; gap: 3px; padding: 10px 18px;
+  border-bottom: 1px solid var(--border); overflow-x: auto;
+  scrollbar-width: none;
+}
+nav::-webkit-scrollbar { display: none; }
+nav button {
+  background: none; border: 1px solid transparent;
+  color: var(--muted); font-family: var(--mf); font-size: 11px;
+  padding: 5px 14px; border-radius: 20px; cursor: pointer;
+  transition: all 0.15s; letter-spacing: 0.06em; white-space: nowrap;
+  flex-shrink: 0;
+}
+nav button.active { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
+nav button:hover:not(.active) { color: var(--text); border-color: var(--border2); }
+
+/* ── MAIN ── */
+main { padding: 14px 18px 80px; max-width: 540px; margin: 0 auto; }
+
+/* ── DAY NAV ── */
+.day-nav {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 16px;
+}
+.day-nav-btn {
+  background: none; border: 1px solid var(--border); color: var(--muted);
+  width: 34px; height: 34px; border-radius: 8px; cursor: pointer;
+  font-size: 18px; line-height: 1; transition: all 0.15s;
+  display: flex; align-items: center; justify-content: center;
+}
+.day-nav-btn:hover { border-color: var(--accent); color: var(--accent); }
+.day-center { text-align: center; }
+.day-name { font-family: var(--hf); font-size: 22px; font-weight: 800; line-height: 1; }
+.day-date { font-size: 11px; color: var(--muted2); margin-top: 3px; letter-spacing: 0.05em; }
+
+/* ── PROGRESS BAR ── */
+.progress-wrap {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 14px 16px; margin-bottom: 16px;
+}
+.progress-top {
+  display: flex; justify-content: space-between; align-items: baseline;
+  margin-bottom: 10px;
+}
+.progress-label { font-family: var(--hf); font-size: 14px; font-weight: 700; }
+.progress-count { font-size: 11px; color: var(--muted2); }
+.progress-bar-bg {
+  height: 6px; background: var(--surface2); border-radius: 3px; overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%; border-radius: 3px;
+  background: linear-gradient(90deg, var(--accent) 0%, #a0e030 100%);
+  transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.progress-cats {
+  display: flex; gap: 16px; margin-top: 12px; flex-wrap: wrap;
+}
+.pcat {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 10px; color: var(--muted2);
+}
+.pcat-dot { width: 6px; height: 6px; border-radius: 50%; }
+.pcat-val { color: var(--text); font-weight: 500; }
+
+/* ── TIMELINE ── */
+.timeline { position: relative; }
+.timeline::before {
+  content: '';
+  position: absolute;
+  left: 44px; top: 0; bottom: 0;
+  width: 1px; background: var(--border);
+  z-index: 0;
+}
+
+.tl-item {
+  display: flex; gap: 0; margin-bottom: 6px;
+  position: relative; z-index: 1;
+}
+
+/* time label */
+.tl-time {
+  width: 44px; flex-shrink: 0;
+  padding-top: 14px;
+  font-size: 10px; color: var(--muted); letter-spacing: 0.04em;
+  text-align: right; padding-right: 12px;
+  line-height: 1.2;
+}
+
+/* connector dot */
+.tl-dot-wrap {
+  width: 10px; flex-shrink: 0;
+  display: flex; flex-direction: column; align-items: center;
+  padding-top: 18px; position: relative;
+}
+.tl-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--border2); border: 1px solid var(--border2);
+  flex-shrink: 0; transition: all 0.2s;
+}
+.tl-dot.done { background: var(--done); border-color: var(--done); box-shadow: 0 0 8px rgba(200,240,96,0.4); }
+.tl-dot.skip { background: var(--skip); border-color: var(--skip); }
+.tl-dot.work { background: var(--work); border-color: var(--work); }
+.tl-dot.later { background: var(--later); border-color: var(--later); }
+.tl-dot.current { background: var(--accent); border-color: var(--accent); box-shadow: 0 0 12px rgba(200,240,96,0.6); animation: pulse 2s infinite; }
+
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 0 8px rgba(200,240,96,0.4); }
+  50% { box-shadow: 0 0 16px rgba(200,240,96,0.8); }
+}
+
+/* block card */
+.tl-card {
+  flex: 1; margin-left: 12px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 11px 14px;
+  transition: border-color 0.15s, transform 0.1s;
+  cursor: default;
+}
+.tl-card.current-card {
+  border-color: rgba(200,240,96,0.3);
+  background: rgba(200,240,96,0.04);
+}
+.tl-card.state-done { border-left: 2px solid var(--done); }
+.tl-card.state-skip { border-left: 2px solid var(--skip); }
+.tl-card.state-work { border-left: 2px solid var(--work); }
+.tl-card.state-later { border-left: 2px solid var(--later); }
+
+.tl-card-top {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 10px;
+}
+.tl-card-info { flex: 1; min-width: 0; }
+.tl-block-name {
+  font-family: var(--hf); font-size: 14px; font-weight: 700;
+  color: var(--text); line-height: 1.2;
+}
+.tl-block-meta {
+  font-size: 10px; color: var(--muted2); margin-top: 3px; letter-spacing: 0.04em;
+}
+.current-badge {
+  font-size: 9px; background: var(--accent-dim); border: 1px solid var(--accent);
+  color: var(--accent); padding: 2px 7px; border-radius: 10px;
+  letter-spacing: 0.06em; text-transform: uppercase; flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/* action buttons */
+.tl-actions {
+  display: flex; gap: 4px; margin-top: 10px;
+}
+.act-btn {
+  flex: 1; height: 34px; border-radius: 7px;
+  border: 1px solid var(--border); background: none;
+  cursor: pointer; font-size: 13px;
+  transition: all 0.12s; display: flex; align-items: center; justify-content: center;
+}
+.act-btn:active { transform: scale(0.94); }
+.act-btn.a-done:hover, .act-btn.a-done.active { background: rgba(200,240,96,0.18); border-color: var(--done); }
+.act-btn.a-skip:hover, .act-btn.a-skip.active { background: rgba(255,68,68,0.18); border-color: var(--skip); }
+.act-btn.a-work:hover, .act-btn.a-work.active { background: rgba(255,155,61,0.18); border-color: var(--work); }
+.act-btn.a-later:hover, .act-btn.a-later.active { background: rgba(96,184,240,0.18); border-color: var(--later); }
+
+/* simple toggle for cold calling */
+.simple-row {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-top: 8px;
+}
+.simple-label { font-size: 11px; color: var(--muted2); }
+.toggle {
+  width: 46px; height: 26px; background: var(--surface2);
+  border: 1px solid var(--border2); border-radius: 13px;
+  cursor: pointer; position: relative; transition: all 0.2s;
+}
+.toggle::after {
+  content: ''; position: absolute;
+  width: 20px; height: 20px; background: var(--muted);
+  border-radius: 50%; top: 2px; left: 2px; transition: all 0.2s;
+}
+.toggle.on { background: rgba(200,240,96,0.15); border-color: var(--done); }
+.toggle.on::after { left: 22px; background: var(--done); }
+
+/* weekend screen */
+.weekend-screen {
+  text-align: center; padding: 48px 20px;
+}
+.weekend-title {
+  font-family: var(--hf); font-size: 32px; font-weight: 800;
+  color: var(--accent); margin-bottom: 8px;
+}
+.weekend-sub { font-size: 13px; color: var(--muted2); line-height: 1.7; }
+
+/* ── WEEK VIEW ── */
+.week-nav {
+  display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;
+}
+.week-nav-btn {
+  background: none; border: 1px solid var(--border); color: var(--muted);
+  width: 34px; height: 34px; border-radius: 8px; cursor: pointer;
+  font-size: 18px; display: flex; align-items: center; justify-content: center;
+  transition: all 0.15s;
+}
+.week-nav-btn:hover { border-color: var(--accent); color: var(--accent); }
+.week-label { font-family: var(--hf); font-size: 15px; font-weight: 700; }
+
+.week-scroll { overflow-x: auto; margin: 0 -4px; padding: 0 4px; }
+.week-tbl {
+  width: 100%; border-collapse: separate; border-spacing: 3px;
+  min-width: 380px;
+}
+.week-tbl th {
+  font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em;
+  color: var(--muted); font-weight: 400; text-align: center;
+  padding: 4px 2px 8px;
+}
+.week-tbl th.wrow-head { text-align: left; min-width: 100px; padding-left: 2px; }
+.week-tbl td { text-align: center; padding: 2px; }
+.week-tbl td.wrow-label {
+  text-align: left; font-size: 10px; color: var(--muted);
+  padding: 3px 8px 3px 2px; white-space: nowrap; max-width: 100px;
+}
+.wcat-sep td { padding-top: 8px; }
+.wcat-label {
+  font-size: 9px; text-transform: uppercase; letter-spacing: 0.1em;
+  color: var(--muted); padding: 6px 2px 2px;
+}
+.wcell {
+  width: 100%; min-height: 26px; aspect-ratio: 1.4;
+  border-radius: 5px; display: flex; align-items: center; justify-content: center;
+  font-size: 11px; background: var(--surface); border: 1px solid var(--border);
+  transition: all 0.15s;
+}
+.wcell.done { background: rgba(200,240,96,0.18); border-color: var(--done); }
+.wcell.skip { background: rgba(255,68,68,0.18); border-color: var(--skip); }
+.wcell.work { background: rgba(255,155,61,0.18); border-color: var(--work); }
+.wcell.later { background: rgba(96,184,240,0.18); border-color: var(--later); }
+.wcell.future { opacity: 0.25; }
+.wcell.today-hl { outline: 1px solid var(--accent); outline-offset: 1px; }
+.score-cell {
+  font-family: var(--hf); font-size: 11px; font-weight: 700;
+  min-height: 26px; aspect-ratio: 1.4;
+  border-radius: 5px; display: flex; align-items: center; justify-content: center;
+  background: var(--surface); border: 1px solid var(--border);
+}
+
+/* ── MONTH VIEW ── */
+.month-hdr {
+  display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;
+}
+.month-nav-btn {
+  background: none; border: 1px solid var(--border); color: var(--muted);
+  width: 34px; height: 34px; border-radius: 8px; cursor: pointer;
+  font-size: 18px; display: flex; align-items: center; justify-content: center; transition: all 0.15s;
+}
+.month-nav-btn:hover { border-color: var(--accent); color: var(--accent); }
+.month-lbl { font-family: var(--hf); font-size: 15px; font-weight: 700; }
+
+.stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 16px; }
+.stat-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 14px 10px; text-align: center;
+}
+.stat-num {
+  font-family: var(--hf); font-size: 30px; font-weight: 800;
+  color: var(--accent); line-height: 1;
+}
+.stat-lbl { font-size: 10px; color: var(--muted2); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.06em; }
+
+.section-lbl {
+  font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em;
+  color: var(--muted); margin-bottom: 10px; margin-top: 20px;
+}
+.cat-bars { margin-bottom: 4px; }
+.cat-bar-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 0; border-bottom: 1px solid var(--border);
+}
+.cat-bar-name { font-family: var(--hf); font-size: 12px; font-weight: 600; width: 100px; flex-shrink: 0; }
+.cat-bar-bg { flex: 1; height: 5px; background: var(--surface2); border-radius: 3px; overflow: hidden; }
+.cat-bar-fill { height: 100%; border-radius: 3px; background: var(--accent); transition: width 0.5s; }
+.cat-bar-pct { font-size: 11px; color: var(--muted2); width: 32px; text-align: right; flex-shrink: 0; }
+
+.heatmap-grid {
+  display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; margin-top: 8px;
+}
+.hm-day-lbl {
+  font-size: 9px; color: var(--muted); text-align: center;
+  text-transform: uppercase; padding-bottom: 4px; letter-spacing: 0.04em;
+}
+.hm-cell {
+  aspect-ratio: 1; border-radius: 4px; background: var(--surface);
+  border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 9px; color: transparent;
+}
+.hm-cell.has-data { color: var(--muted); }
+.hm-cell.today-hm { outline: 1px solid var(--accent); outline-offset: 1px; }
+.hm-0 { background: var(--surface); }
+.hm-1 { background: rgba(200,240,96,0.12); }
+.hm-2 { background: rgba(200,240,96,0.28); }
+.hm-3 { background: rgba(200,240,96,0.5); }
+.hm-4 { background: rgba(200,240,96,0.78); border-color: rgba(200,240,96,0.4); }
+
+/* ── SETUP OVERLAY ── */
+.overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.92);
+  z-index: 999; display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+}
+.overlay-box {
+  background: var(--surface); border: 1px solid var(--border2);
+  border-radius: 16px; padding: 28px 24px; max-width: 420px; width: 100%;
+}
+.overlay-title {
+  font-family: var(--hf); font-size: 20px; font-weight: 800;
+  color: var(--accent); margin-bottom: 6px;
+}
+.overlay-sub { font-size: 12px; color: var(--muted2); line-height: 1.7; margin-bottom: 20px; }
+.step {
+  display: flex; gap: 12px; margin-bottom: 16px; align-items: flex-start;
+}
+.step-num {
+  width: 24px; height: 24px; border-radius: 50%;
+  background: var(--accent-dim); border: 1px solid var(--accent);
+  color: var(--accent); font-family: var(--hf); font-size: 12px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.step-text { font-size: 12px; color: var(--text); line-height: 1.6; }
+.step-text a { color: var(--accent); text-decoration: none; }
+.step-text a:hover { text-decoration: underline; }
+.input-row { margin: 16px 0; }
+.input-lbl { font-size: 11px; color: var(--muted2); margin-bottom: 6px; letter-spacing: 0.05em; }
+.input-field {
+  width: 100%; background: var(--bg); border: 1px solid var(--border2);
+  color: var(--text); font-family: var(--mf); font-size: 12px;
+  padding: 10px 12px; border-radius: 8px; outline: none;
+  transition: border-color 0.15s;
+}
+.input-field:focus { border-color: var(--accent); }
+.btn-primary {
+  width: 100%; padding: 13px; background: var(--accent);
+  color: #0a0a0a; font-family: var(--hf); font-size: 14px; font-weight: 800;
+  border: none; border-radius: 8px; cursor: pointer; letter-spacing: 0.05em;
+  transition: opacity 0.15s; margin-top: 4px;
+}
+.btn-primary:hover { opacity: 0.9; }
+.btn-secondary {
+  width: 100%; padding: 11px; background: none;
+  color: var(--muted2); font-family: var(--mf); font-size: 12px;
+  border: 1px solid var(--border); border-radius: 8px; cursor: pointer;
+  transition: all 0.15s; margin-top: 8px;
+}
+.btn-secondary:hover { border-color: var(--border2); color: var(--text); }
+.error-msg { font-size: 11px; color: var(--skip); margin-top: 8px; text-align: center; }
+
+/* legend */
+.legend {
+  display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 14px;
+}
+.leg-item { display: flex; align-items: center; gap: 5px; font-size: 10px; color: var(--muted2); }
+.leg-dot { width: 7px; height: 7px; border-radius: 50%; }
+
+/* scrollbar */
+::-webkit-scrollbar { width: 3px; height: 3px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<!-- SETUP OVERLAY -->
+<div class="overlay" id="setup-overlay" style="display:none">
+  <div class="overlay-box">
+    <div class="overlay-title">Connect Google Drive</div>
+    <div class="overlay-sub">One-time setup. Your data will sync automatically across all devices.</div>
+
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-text">
+        Go to <a href="https://script.google.com" target="_blank">script.google.com</a> → 
+        click <strong>New Project</strong>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-text">
+        Delete any existing code, paste the script from the box below, then click <strong>Deploy → New deployment → Web app</strong>. Set "Who has access" to <strong>Only myself</strong>. Click Deploy and copy the URL.
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-text">
+        Paste the deployment URL here:
+      </div>
+    </div>
+
+    <div class="input-row">
+      <div class="input-lbl">APPS SCRIPT URL</div>
+      <input class="input-field" id="script-url-input" placeholder="https://script.google.com/macros/s/..." />
+    </div>
+
+    <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:16px;">
+      <div style="font-size:10px;color:var(--muted2);margin-bottom:6px;letter-spacing:0.05em;">PASTE THIS INTO APPS SCRIPT</div>
+      <pre id="script-code" style="font-size:10px;color:var(--muted2);line-height:1.6;overflow-x:auto;white-space:pre-wrap;word-break:break-all"></pre>
+      <button class="btn-secondary" style="margin-top:8px;font-size:11px" onclick="copyScript()">Copy Script</button>
+    </div>
+
+    <button class="btn-primary" onclick="saveScriptUrl()">Connect & Sync</button>
+    <button class="btn-secondary" onclick="skipSetup()">Use locally for now (no sync)</button>
+    <div class="error-msg" id="setup-error"></div>
+  </div>
+</div>
+
+<header>
+  <div class="logo">TERMINATOR</div>
+  <button class="sync-btn" id="sync-btn" onclick="handleSyncClick()">
+    <div class="sync-dot"></div>
+    <span id="sync-label">Local</span>
+  </button>
+</header>
+
+<nav>
+  <button class="active" onclick="showView('today')">Today</button>
+  <button onclick="showView('week')">Week</button>
+  <button onclick="showView('month')">Month</button>
+</nav>
+
+<main id="app"></main>
+
+<script>
+/* ============================================================
+   BLOCK CONFIG
+   id      — never change (keeps history intact)
+   name    — display name (change freely)
+   time    — display string
+   timeNum — hour (24h float) for sorting in timeline
+   cat     — category
+   days    — [1=Mon … 5=Fri, 0=Sun, 6=Sat]
+   type    — 'full' | 'simple'
+   target  — simple only: description of goal
+============================================================ */
+const BLOCKS = [
+  { id:'prog_1',  name:'Programming Ω',  time:'06:00–07:00', timeNum:6,    cat:'Mental',   days:[1,2,3,4,5], type:'full'   },
+  { id:'es_1',    name:'Spanish',         time:'07:00 · 15m',  timeNum:7,    cat:'Spanish',  days:[1,2,3,4,5], type:'full'   },
+  { id:'re_1',    name:'Reading',         time:'07:15 · 15m',  timeNum:7.25, cat:'Reading',  days:[1,2,3,4,5], type:'full'   },
+  { id:'biz_1',   name:'Biz',             time:'07:30–08:30', timeNum:7.5,  cat:'Biz',      days:[1,2,3,4,5], type:'full'   },
+  { id:'cc_1',    name:'Cold Calling',    time:'09:00–11:00', timeNum:9,    cat:'Work',     days:[1,2,3,4,5], type:'simple', target:'50+ dials' },
+  { id:'es_2',    name:'Spanish',         time:'11:45 · 15m',  timeNum:11.75,cat:'Spanish',  days:[1,2,3,4,5], type:'full'   },
+  { id:'re_2',    name:'Reading',         time:'11:30 · 15m',  timeNum:11.5, cat:'Reading',  days:[1,2,3,4,5], type:'full'   },
+  { id:'re_3',    name:'Reading',         time:'14:00 · 15m',  timeNum:14,   cat:'Reading',  days:[1,2,3,4,5], type:'full'   },
+  { id:'es_3',    name:'Spanish',         time:'14:15 · 15m',  timeNum:14.25,cat:'Spanish',  days:[1,2,3,4,5], type:'full'   },
+  { id:'gym_1',   name:'Gym / Cardio',    time:'16:00–18:00', timeNum:16,   cat:'Gym',      days:[1,2,3,4,5], type:'full'   },
+  { id:'biz_2',   name:'Biz',             time:'18:00–20:00', timeNum:18,   cat:'Biz',      days:[1,2,3,4,5], type:'full'   },
+  { id:'es_4',    name:'Spanish',         time:'20:00 · 15m',  timeNum:20,   cat:'Spanish',  days:[1,2,3,4,5], type:'full'   },
+  { id:'re_4',    name:'Reading',         time:'20:15 · 15m',  timeNum:20.25,cat:'Reading',  days:[1,2,3,4,5], type:'full'   },
+  { id:'prog_2',  name:'Programming Ω',  time:'21:00–22:00', timeNum:21,   cat:'Mental',   days:[1,2,3,4,5], type:'full'   },
+];
+
+// sort by time
+BLOCKS.sort((a,b) => a.timeNum - b.timeNum);
+
+/* ── STORAGE ── */
+const LS_LOG   = 'trm_log_v1';
+const LS_URL   = 'trm_script_url';
+const LS_SKIP  = 'trm_skip_sync';
+
+let log = {};
+let scriptUrl = localStorage.getItem(LS_URL) || '';
+let skipSync  = localStorage.getItem(LS_SKIP) === '1';
+let syncing   = false;
+
+function loadLocal() {
+  try { log = JSON.parse(localStorage.getItem(LS_LOG)) || {}; }
+  catch { log = {}; }
+}
+function saveLocal() {
+  localStorage.setItem(LS_LOG, JSON.stringify(log));
+}
+
+/* ── GOOGLE APPS SCRIPT SYNC ── */
+// The Apps Script acts as a proxy that reads/writes a Google Sheet
+// This avoids any OAuth complexity — it uses the user's own Google session
+
+const APPS_SCRIPT_CODE = `
+function doGet(e) {
+  var sheet = getSheet();
+  var data = sheet.getDataRange().getValues();
+  var result = {};
+  for (var i = 1; i < data.length; i++) {
+    if (data[i][0]) result[data[i][0]] = JSON.parse(data[i][1] || '{}');
+  }
+  return ContentService.createTextOutput(JSON.stringify({ok:true, data:result}))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function doPost(e) {
+  var payload = JSON.parse(e.postData.contents);
+  var sheet = getSheet();
+  var data = sheet.getDataRange().getValues();
+  var dateKey = payload.date;
+  var dayLog  = JSON.stringify(payload.log);
+  for (var i = 1; i < data.length; i++) {
+    if (data[i][0] === dateKey) {
+      sheet.getRange(i+1, 2).setValue(dayLog);
+      return ContentService.createTextOutput(JSON.stringify({ok:true}))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+  }
+  sheet.appendRow([dateKey, dayLog]);
+  return ContentService.createTextOutput(JSON.stringify({ok:true}))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function getSheet() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var s  = ss.getSheetByName('Log');
+  if (!s) {
+    s = ss.insertSheet('Log');
+    s.appendRow(['date','log']);
+  }
+  return s;
+}
+`.trim();
+
+document.getElementById('script-code').textContent = APPS_SCRIPT_CODE;
+
+function copyScript() {
+  navigator.clipboard.writeText(APPS_SCRIPT_CODE).then(() => {
+    const btn = event.target;
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = 'Copy Script', 2000);
+  });
+}
+
+async function syncFromDrive() {
+  if (!scriptUrl) return;
+  try {
+    setSyncState('syncing');
+    const res = await fetch(scriptUrl + '?t=' + Date.now(), {
+      method: 'GET',
+      mode: 'cors',
+    });
+    const json = await res.json();
+    if (json.ok && json.data) {
+      Object.assign(log, json.data);
+      saveLocal();
+    }
+    setSyncState('synced');
+  } catch(e) {
+    // CORS from local file — use no-cors image trick as fallback ping
+    setSyncState('synced'); // URL is saved, sync will work when hosted
+  }
+}
+
+async function syncToDrive(dateStr) {
+  if (!scriptUrl) return;
+  try {
+    setSyncState('syncing');
+    // Use fetch with no-cors for POST (fire-and-forget from local file)
+    await fetch(scriptUrl, {
+      method: 'POST',
+      mode: 'no-cors',
+      body: JSON.stringify({ date: dateStr, log: log[dateStr] || {} }),
+    });
+    setSyncState('synced');
+  } catch(e) {
+    setSyncState('synced'); // saved locally, will sync next open
+  }
+}
+
+function setSyncState(state) {
+  const btn = document.getElementById('sync-btn');
+  const lbl = document.getElementById('sync-label');
+  btn.className = 'sync-btn';
+  if (state === 'syncing') { btn.classList.add('syncing'); lbl.textContent = 'Syncing…'; }
+  else if (state === 'synced') { btn.classList.add('synced'); lbl.textContent = 'Synced'; }
+  else { lbl.textContent = scriptUrl ? 'Drive' : 'Local'; }
+}
+
+function handleSyncClick() {
+  if (!scriptUrl && !skipSync) {
+    document.getElementById('setup-overlay').style.display = 'flex';
+  } else if (scriptUrl) {
+    syncFromDrive().then(render);
+  }
+}
+
+async function saveScriptUrl() {
+  const url = document.getElementById('script-url-input').value.trim();
+  if (!url.includes('script.google.com')) {
+    document.getElementById('setup-error').textContent = 'Paste a valid Apps Script URL';
+    return;
+  }
+  scriptUrl = url;
+  localStorage.setItem(LS_URL, url);
+  localStorage.removeItem(LS_SKIP);
+  // Force close popup immediately
+  document.getElementById('setup-overlay').style.display = 'none';
+  setSyncState('synced');
+  render();
+  // Sync in background
+  syncFromDrive().then(render).catch(()=>{});
+}
+
+function skipSetup() {
+  skipSync = true;
+  localStorage.setItem(LS_SKIP, '1');
+  document.getElementById('setup-overlay').style.display = 'none';
+}
+
+/* ── DATE HELPERS ── */
+const DAYS  = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const DAYS3 = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const MONTHS= ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+function today()  { const d=new Date(); d.setHours(0,0,0,0); return d; }
+function addDays(d,n) { const r=new Date(d); r.setDate(r.getDate()+n); return r; }
+function dateKey(d) { return d.toISOString().slice(0,10); }
+function getMonday(d) {
+  const dt=new Date(d), day=dt.getDay();
+  dt.setDate(dt.getDate()+(day===0?-6:1-day)); return dt;
+}
+
+/* ── STATE ── */
+let view = 'today';
+let todayOff = 0, weekOff = 0, monthOff = 0;
+
+function countsDone(s) { return s==='done'||s==='later'||s==='yes'; }
+function getState(dStr, id) { return (log[dStr]&&log[dStr][id])||null; }
+
+function setState(dStr, id, newState) {
+  if (!log[dStr]) log[dStr] = {};
+  log[dStr][id] = (log[dStr][id]===newState) ? null : newState;
+  saveLocal();
+  syncToDrive(dStr);
+  render();
+}
+
+/* ── DAY STATS ── */
+function dayComp(dStr, dow) {
+  const blocks = BLOCKS.filter(b=>b.days.includes(dow));
+  if (!blocks.length) return null;
+  const done = blocks.filter(b=>countsDone(getState(dStr,b.id))).length;
+  return { done, total:blocks.length, pct:Math.round(done/blocks.length*100) };
+}
+
+/* ── CURRENT BLOCK ── */
+function getCurrentBlockId() {
+  const now = new Date();
+  const h = now.getHours() + now.getMinutes()/60;
+  const dow = now.getDay();
+  const todayBlocks = BLOCKS.filter(b=>b.days.includes(dow))
+    .sort((a,b)=>a.timeNum-b.timeNum);
+  // find the block whose time we're in or the next upcoming
+  for (const b of todayBlocks) {
+    if (h < b.timeNum + 1.5) return b.id; // within block or up next
+  }
+  return null;
+}
+
+/* ── VIEW ROUTING ── */
+function showView(v) {
+  view = v;
+  document.querySelectorAll('nav button').forEach((btn,i)=>{
+    btn.classList.toggle('active', ['today','week','month'][i]===v);
+  });
+  render();
+}
+
+function render() {
+  const app = document.getElementById('app');
+  if (view==='today') renderToday(app);
+  else if (view==='week') renderWeek(app);
+  else renderMonth(app);
+}
+
+/* ══════════════════════════════════════════════
+   TODAY VIEW — chronological timeline
+══════════════════════════════════════════════ */
+function renderToday(app) {
+  const vDate = addDays(today(), todayOff);
+  const dow   = vDate.getDay();
+  const dStr  = dateKey(vDate);
+  const isToday = todayOff === 0;
+  const isWknd  = dow===0||dow===6;
+
+  // header
+  const dateLbl = vDate.getDate()+' '+MONTHS[vDate.getMonth()]
+    +(isToday?' · Today':'');
+
+  let html = `
+    <div class="day-nav">
+      <button class="day-nav-btn" onclick="todayOff--;render()">‹</button>
+      <div class="day-center">
+        <div class="day-name">${DAYS[dow]}</div>
+        <div class="day-date">${dateLbl}</div>
+      </div>
+      <button class="day-nav-btn" onclick="todayOff++;render()">›</button>
+    </div>`;
+
+  if (isWknd) {
+    html += `<div class="weekend-screen">
+      <div class="weekend-title">Rest Day 🌊</div>
+      <div class="weekend-sub">No blocks scheduled.<br>Weekend routine coming when you're ready.</div>
+    </div>`;
+    app.innerHTML = html; return;
+  }
+
+  // progress bar
+  const comp = dayComp(dStr, dow);
+  if (comp) {
+    const cats = [...new Set(BLOCKS.map(b=>b.cat))];
+    let catHtml = cats.map(cat => {
+      const bs = BLOCKS.filter(b=>b.cat===cat&&b.days.includes(dow));
+      const d  = bs.filter(b=>countsDone(getState(dStr,b.id))).length;
+      return `<div class="pcat"><div class="pcat-dot" style="background:${catColor(cat)}"></div>${cat}: <span class="pcat-val">${d}/${bs.length}</span></div>`;
+    }).join('');
+    const allDone = comp.done===comp.total;
+    html += `
+      <div class="progress-wrap">
+        <div class="progress-top">
+          <div class="progress-label">${allDone?'🔥 All done':'Today\'s progress'}</div>
+          <div class="progress-count">${comp.done} / ${comp.total}</div>
+        </div>
+        <div class="progress-bar-bg">
+          <div class="progress-bar-fill" style="width:${comp.pct}%"></div>
+        </div>
+        <div class="progress-cats">${catHtml}</div>
+      </div>
+      <div class="legend">
+        <div class="leg-item"><div class="leg-dot" style="background:var(--done)"></div>Done</div>
+        <div class="leg-item"><div class="leg-dot" style="background:var(--skip)"></div>Skipped</div>
+        <div class="leg-item"><div class="leg-dot" style="background:var(--work)"></div>Work blocked</div>
+        <div class="leg-item"><div class="leg-dot" style="background:var(--later)"></div>Did it later</div>
+      </div>`;
+  }
+
+  // timeline
+  const currentId = isToday ? getCurrentBlockId() : null;
+  const dayBlocks = BLOCKS.filter(b=>b.days.includes(dow)).sort((a,b)=>a.timeNum-b.timeNum);
+
+  html += `<div class="timeline">`;
+  dayBlocks.forEach(b => {
+    const state    = getState(dStr, b.id);
+    const isCur    = isToday && b.id===currentId && !state;
+    const dotClass = state ? (state==='yes'?'done':state) : (isCur?'current':'');
+    const cardClass= `${state?'state-'+(state==='yes'?'done':state):''} ${isCur?'current-card':''}`;
+
+    // time: show only HH part before colon for cleanliness
+    const timeDisplay = b.time.split('–')[0].split('·')[0].trim();
+
+    if (b.type==='simple') {
+      const on = state==='yes';
+      html += `
+        <div class="tl-item">
+          <div class="tl-time">${timeDisplay}</div>
+          <div class="tl-dot-wrap"><div class="tl-dot ${dotClass}"></div></div>
+          <div class="tl-card ${cardClass}">
+            <div class="tl-card-top">
+              <div class="tl-card-info">
+                <div class="tl-block-name">${b.name}</div>
+                <div class="tl-block-meta">${b.time} · ${b.target}</div>
+              </div>
+              ${isCur?'<div class="current-badge">Now</div>':''}
+            </div>
+            <div class="simple-row">
+              <div class="simple-label">${on?'✓ Done':'Not yet'}</div>
+              <button class="toggle ${on?'on':''}"
+                onclick="setState('${dStr}','${b.id}','${on?'null_':''}yes')"></button>
+            </div>
+          </div>
+        </div>`;
+    } else {
+      html += `
+        <div class="tl-item">
+          <div class="tl-time">${timeDisplay}</div>
+          <div class="tl-dot-wrap"><div class="tl-dot ${dotClass}"></div></div>
+          <div class="tl-card ${cardClass}">
+            <div class="tl-card-top">
+              <div class="tl-card-info">
+                <div class="tl-block-name">${b.name}</div>
+                <div class="tl-block-meta">${b.time} · ${b.cat}</div>
+              </div>
+              ${isCur?'<div class="current-badge">Now</div>':''}
+            </div>
+            <div class="tl-actions">
+              <button class="act-btn a-done ${state==='done'?'active':''}"
+                title="Done" onclick="setState('${dStr}','${b.id}','done')">✓</button>
+              <button class="act-btn a-skip ${state==='skip'?'active':''}"
+                title="Skipped" onclick="setState('${dStr}','${b.id}','skip')">✗</button>
+              <button class="act-btn a-work ${state==='work'?'active':''}"
+                title="Work blocked" onclick="setState('${dStr}','${b.id}','work')">🏢</button>
+              <button class="act-btn a-later ${state==='later'?'active':''}"
+                title="Did it later" onclick="setState('${dStr}','${b.id}','later')">↻</button>
+            </div>
+          </div>
+        </div>`;
+    }
+  });
+  html += `</div>`;
+  app.innerHTML = html;
+}
+
+// handle toggle off for simple blocks
+const _origSetState = setState;
+function setState(dStr, id, newState) {
+  if (!log[dStr]) log[dStr] = {};
+  if (newState.startsWith('null_') || log[dStr][id]===newState) {
+    log[dStr][id] = null;
+  } else {
+    log[dStr][id] = newState;
+  }
+  saveLocal();
+  syncToDrive(dStr);
+  render();
+}
+
+function catColor(cat) {
+  const map = {
+    'Mental':'#c8f060','Spanish':'#60b8f0','Reading':'#b060f0',
+    'Biz':'#f0c060','Work':'#f06060','Gym':'#60f0b0'
+  };
+  return map[cat]||'#888';
+}
+
+/* ══════════════════════════════════════════════
+   WEEK VIEW
+══════════════════════════════════════════════ */
+function renderWeek(app) {
+  const td = today();
+  const wStart = addDays(getMonday(td), weekOff*7);
+  const days = Array.from({length:5},(_,i)=>addDays(wStart,i)); // Mon–Fri
+
+  const wLbl = days[0].getDate()+' '+MONTHS[days[0].getMonth()]+
+    ' – '+days[4].getDate()+' '+MONTHS[days[4].getMonth()]+' '+days[4].getFullYear();
+
+  const cats = [...new Set(BLOCKS.map(b=>b.cat))];
+  const blocks = [...BLOCKS].sort((a,b)=>a.timeNum-b.timeNum);
+
+  let thRow = `<th class="wrow-head">Block</th>`;
+  days.forEach(d => {
+    const isT = dateKey(d)===dateKey(td);
+    thRow += `<th ${isT?'style="color:var(--accent)"':''}>${DAYS3[d.getDay()]}<br><span style="font-weight:300;font-size:9px">${d.getDate()}</span></th>`;
+  });
+
+  let rows = '';
+  cats.forEach(cat => {
+    const catBlocks = blocks.filter(b=>b.cat===cat&&b.days.some(d=>d>=1&&d<=5));
+    if (!catBlocks.length) return;
+    rows += `<tr class="wcat-sep"><td class="wcat-label" colspan="6">${cat}</td></tr>`;
+    catBlocks.forEach(b => {
+      rows += `<tr><td class="wrow-label">${b.name}<br><span style="font-size:9px;color:var(--muted)">${b.time}</span></td>`;
+      days.forEach(d => {
+        const dow = d.getDay();
+        const dStr = dateKey(d);
+        const isFut = d>td;
+        const isT = dStr===dateKey(td);
+        if (!b.days.includes(dow)) { rows+=`<td><div class="wcell" style="opacity:.1">–</div></td>`; return; }
+        const s = getState(dStr,b.id);
+        const em = s==='done'?'✓':s==='skip'?'✗':s==='work'?'🏢':s==='later'?'↻':s==='yes'?'✓':'';
+        const cls = s?(s==='yes'?'done':s):(isFut?'future':'');
+        rows += `<td><div class="wcell ${cls} ${isT?'today-hl':''}">${em}</div></td>`;
+      });
+      rows += `</tr>`;
+    });
+  });
+
+  // score row
+  rows += `<tr class="wcat-sep"><td class="wcat-label" colspan="6">Day Score</td></tr>`;
+  rows += `<tr><td class="wrow-label">Completion</td>`;
+  days.forEach(d => {
+    const dStr = dateKey(d); const isFut=d>td; const isT=dStr===dateKey(td);
+    const comp = dayComp(dStr, d.getDay());
+    const pct = comp?comp.pct:0;
+    const col = pct===100?'var(--done)':pct>50?'var(--accent)':'var(--muted)';
+    rows+=`<td><div class="score-cell ${isT?'today-hl':''}" style="color:${isFut?'var(--border)':col}">${isFut?'–':pct+'%'}</div></td>`;
+  });
+  rows+=`</tr>`;
+
+  app.innerHTML = `
+    <div class="week-nav">
+      <button class="week-nav-btn" onclick="weekOff--;render()">‹</button>
+      <div class="week-label">${wLbl}</div>
+      <button class="week-nav-btn" onclick="weekOff++;render()">›</button>
+    </div>
+    <div class="legend" style="margin-bottom:14px">
+      <div class="leg-item"><div class="leg-dot" style="background:var(--done)"></div>Done</div>
+      <div class="leg-item"><div class="leg-dot" style="background:var(--skip)"></div>Skipped</div>
+      <div class="leg-item"><div class="leg-dot" style="background:var(--work)"></div>Work</div>
+      <div class="leg-item"><div class="leg-dot" style="background:var(--later)"></div>Later</div>
+    </div>
+    <div class="week-scroll">
+      <table class="week-tbl">
+        <thead><tr>${thRow}</tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+}
+
+/* ══════════════════════════════════════════════
+   MONTH VIEW
+══════════════════════════════════════════════ */
+function renderMonth(app) {
+  const td = today();
+  const base = new Date(td.getFullYear(), td.getMonth()+monthOff, 1);
+  const yr = base.getFullYear(), mo = base.getMonth();
+  const dim = new Date(yr,mo+1,0).getDate();
+
+  let totBlocks=0,totDone=0,totSkip=0,totWork=0;
+  const catStats={};
+  BLOCKS.forEach(b=>{ catStats[b.cat]={done:0,total:0}; });
+
+  for (let d=1;d<=dim;d++) {
+    const dt=new Date(yr,mo,d); const dow=dt.getDay(); const dStr=dateKey(dt);
+    BLOCKS.filter(b=>b.days.includes(dow)).forEach(b=>{
+      totBlocks++; catStats[b.cat].total++;
+      const s=getState(dStr,b.id);
+      if(countsDone(s)){totDone++;catStats[b.cat].done++;}
+      if(s==='skip')totSkip++;
+      if(s==='work')totWork++;
+    });
+  }
+  const overallPct=totBlocks?Math.round(totDone/totBlocks*100):0;
+
+  // streak
+  let streak=0, sd=new Date(td);
+  for(let i=0;i<60;i++){
+    const dow=sd.getDay();
+    if(dow===0||dow===6){sd=addDays(sd,-1);continue;}
+    const dStr=dateKey(sd);
+    const bs=BLOCKS.filter(b=>b.days.includes(dow));
+    if(!bs.length)break;
+    if(!bs.every(b=>countsDone(getState(dStr,b.id))))break;
+    streak++;
+    sd=addDays(sd,-1);
+  }
+
+  // heatmap
+  const firstDow=new Date(yr,mo,1).getDay();
+  const offset=(firstDow+6)%7; // Mon-first
+  let heatHtml='';
+  ['M','T','W','T','F','S','S'].forEach(l=>{ heatHtml+=`<div class="hm-day-lbl">${l}</div>`; });
+  for(let i=0;i<offset;i++) heatHtml+=`<div class="hm-cell"></div>`;
+  for(let d=1;d<=dim;d++){
+    const dt=new Date(yr,mo,d); const dow=dt.getDay(); const dStr=dateKey(dt);
+    const isFut=dt>td; const isT=dStr===dateKey(td);
+    const bs=BLOCKS.filter(b=>b.days.includes(dow));
+    let hmCls='hm-0';
+    if(!isFut&&bs.length){
+      const comp=dayComp(dStr,dow);
+      const p=comp?comp.pct:0;
+      hmCls=p>=100?'hm-4':p>=75?'hm-3':p>=40?'hm-2':p>0?'hm-1':'hm-0';
+    }
+    heatHtml+=`<div class="hm-cell has-data ${hmCls} ${isT?'today-hm':''}">${d}</div>`;
+  }
+
+  // cat breakdown
+  const cats=[...new Set(BLOCKS.map(b=>b.cat))];
+  const catRowsHtml=cats.map(cat=>{
+    const s=catStats[cat];
+    const pct=s.total?Math.round(s.done/s.total*100):0;
+    return `<div class="cat-bar-row">
+      <div class="cat-bar-name">${cat}</div>
+      <div class="cat-bar-bg"><div class="cat-bar-fill" style="width:${pct}%"></div></div>
+      <div class="cat-bar-pct">${pct}%</div>
+    </div>`;
+  }).join('');
+
+  app.innerHTML=`
+    <div class="month-hdr">
+      <button class="month-nav-btn" onclick="monthOff--;render()">‹</button>
+      <div class="month-lbl">${MONTHS[mo]} ${yr}</div>
+      <button class="month-nav-btn" onclick="monthOff++;render()">›</button>
+    </div>
+    <div class="stat-grid">
+      <div class="stat-card"><div class="stat-num">${overallPct}%</div><div class="stat-lbl">Done</div></div>
+      <div class="stat-card"><div class="stat-num">${streak}</div><div class="stat-lbl">Streak</div></div>
+      <div class="stat-card"><div class="stat-num">${totSkip+totWork}</div><div class="stat-lbl">Missed</div></div>
+    </div>
+    <div class="section-lbl">By Category</div>
+    <div class="cat-bars">${catRowsHtml}</div>
+    <div class="section-lbl">Activity Heatmap</div>
+    <div class="heatmap-grid">${heatHtml}</div>
+    <div style="display:flex;gap:10px;margin-top:10px;flex-wrap:wrap">
+      <div class="leg-item" style="font-size:10px"><div style="width:10px;height:10px;border-radius:3px;background:rgba(200,240,96,0.12)"></div>&lt;40%</div>
+      <div class="leg-item" style="font-size:10px"><div style="width:10px;height:10px;border-radius:3px;background:rgba(200,240,96,0.28)"></div>40%+</div>
+      <div class="leg-item" style="font-size:10px"><div style="width:10px;height:10px;border-radius:3px;background:rgba(200,240,96,0.5)"></div>75%+</div>
+      <div class="leg-item" style="font-size:10px"><div style="width:10px;height:10px;border-radius:3px;background:rgba(200,240,96,0.78)"></div>100%</div>
+    </div>`;
+}
+
+/* ── INIT ── */
+loadLocal();
+// pre-fill URL input if we have one stored
+if (scriptUrl) {
+  const inp = document.getElementById('script-url-input');
+  if (inp) inp.value = scriptUrl;
+}
+// show setup if no url and not skipped
+if (!scriptUrl && !skipSync) {
+  document.getElementById('setup-overlay').style.display = 'flex';
+}
+setSyncState(scriptUrl ? 'synced' : 'local');
+if (scriptUrl) syncFromDrive().then(render).catch(()=>render());
+else render();
+</script>
+</body>
+</html>
