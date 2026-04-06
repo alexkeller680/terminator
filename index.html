@@ -434,7 +434,7 @@ body.overlay-open { overflow: hidden; }
 <div class="overlay" id="setup-overlay" style="display:none">
   <div class="overlay-box">
     <div class="overlay-title">Connect Google Drive</div>
-    <div class="overlay-sub">Paste your Apps Script deployment URL below to sync your data across all devices.</div>
+    <div class="overlay-sub">Paste your Apps Script deployment URL below. Make sure it's deployed as <strong style="color:var(--text)">Execute as: Me</strong> and <strong style="color:var(--text)">Who has access: Anyone</strong>.</div>
 
     <div class="input-row">
       <div class="input-lbl">APPS SCRIPT URL</div>
@@ -526,16 +526,18 @@ async function syncFromDrive() {
       method: 'GET',
       mode: 'cors',
     });
-    if (!res.ok) { setSyncState('error'); return; }
+    if (!res.ok) { console.error('Sync GET failed:', res.status, res.statusText); setSyncState('error'); return; }
     const json = await res.json();
     if (json.ok && json.data) {
       Object.assign(log, json.data);
       saveLocal();
       setSyncState('synced');
     } else {
+      console.error('Sync unexpected response:', json);
       setSyncState('error');
     }
   } catch(e) {
+    console.error('Sync error:', e.message);
     setSyncState('error');
   }
 }
@@ -579,8 +581,9 @@ function hideOverlay() {
 }
 
 function handleSyncClick() {
-  if (!scriptUrl && !skipSync) showOverlay();
-  else if (scriptUrl) syncFromDrive().then(render).catch(()=>{});
+  const btn = document.getElementById('sync-btn');
+  if (!scriptUrl || btn.classList.contains('error')) showOverlay();
+  else syncFromDrive().then(render).catch(()=>{});
 }
 
 async function saveScriptUrl() {
