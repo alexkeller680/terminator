@@ -518,56 +518,6 @@ function saveLocal() {
 // The Apps Script acts as a proxy that reads/writes a Google Sheet
 // This avoids any OAuth complexity — it uses the user's own Google session
 
-const APPS_SCRIPT_CODE = `
-function doGet(e) {
-  var sheet = getSheet();
-  var data = sheet.getDataRange().getValues();
-  var result = {};
-  for (var i = 1; i < data.length; i++) {
-    if (data[i][0]) result[data[i][0]] = JSON.parse(data[i][1] || '{}');
-  }
-  return ContentService.createTextOutput(JSON.stringify({ok:true, data:result}))
-    .setMimeType(ContentService.MimeType.JSON);
-}
-
-function doPost(e) {
-  var payload = JSON.parse(e.postData.contents);
-  var sheet = getSheet();
-  var data = sheet.getDataRange().getValues();
-  var dateKey = payload.date;
-  var dayLog  = JSON.stringify(payload.log);
-  for (var i = 1; i < data.length; i++) {
-    if (data[i][0] === dateKey) {
-      sheet.getRange(i+1, 2).setValue(dayLog);
-      return ContentService.createTextOutput(JSON.stringify({ok:true}))
-        .setMimeType(ContentService.MimeType.JSON);
-    }
-  }
-  sheet.appendRow([dateKey, dayLog]);
-  return ContentService.createTextOutput(JSON.stringify({ok:true}))
-    .setMimeType(ContentService.MimeType.JSON);
-}
-
-function getSheet() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var s  = ss.getSheetByName('Log');
-  if (!s) {
-    s = ss.insertSheet('Log');
-    s.appendRow(['date','log']);
-  }
-  return s;
-}
-`.trim();
-
-document.getElementById('script-code').textContent = APPS_SCRIPT_CODE;
-
-function copyScript() {
-  navigator.clipboard.writeText(APPS_SCRIPT_CODE).then(() => {
-    const btn = event.target;
-    btn.textContent = 'Copied!';
-    setTimeout(() => btn.textContent = 'Copy Script', 2000);
-  });
-}
 
 async function syncFromDrive() {
   if (!scriptUrl) return;
