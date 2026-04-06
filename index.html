@@ -427,6 +427,7 @@ body.overlay-open { overflow: hidden; }
 ::-webkit-scrollbar { width: 3px; height: 3px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+#script-block pre::-webkit-scrollbar { width: 3px; height: 3px; }
 </style>
 </head>
 <body>
@@ -435,7 +436,7 @@ body.overlay-open { overflow: hidden; }
 <div class="overlay" id="setup-overlay" style="display:none">
   <div class="overlay-box">
     <div class="overlay-title">Connect Google Drive</div>
-    <div class="overlay-sub">Paste your Apps Script deployment URL below. Make sure it's deployed as <strong style="color:var(--text)">Execute as: Me</strong> and <strong style="color:var(--text)">Who has access: Anyone</strong>.</div>
+    <div class="overlay-sub">Paste your Apps Script deployment URL below. Deploy as <strong style="color:var(--text)">Execute as: Me</strong> · <strong style="color:var(--text)">Anyone</strong>.</div>
 
     <div class="input-row">
       <div class="input-lbl">APPS SCRIPT URL</div>
@@ -444,6 +445,11 @@ body.overlay-open { overflow: hidden; }
     </div>
 
     <button class="btn-primary" onclick="saveScriptUrl()">Connect & Sync</button>
+    <button class="btn-secondary" onclick="toggleScript()">View / copy Apps Script code</button>
+    <div id="script-block" style="display:none;margin-top:14px">
+      <pre id="script-code" style="background:var(--bg);border:1px solid var(--border2);border-radius:8px;padding:12px;font-size:10px;overflow-x:auto;white-space:pre;color:var(--muted2);line-height:1.5;max-height:200px;overflow-y:auto"></pre>
+      <button class="btn-secondary" style="margin-top:6px" onclick="copyScript()">Copy script</button>
+    </div>
     <button class="btn-secondary" onclick="skipSetup()">Skip — use locally for now</button>
     <div class="error-msg" id="setup-error"></div>
   </div>
@@ -517,9 +523,81 @@ function saveLocal() {
 }
 
 /* ── GOOGLE APPS SCRIPT SYNC ── */
-// The Apps Script acts as a proxy that reads/writes a Google Sheet
-// This avoids any OAuth complexity — it uses the user's own Google session
+const APPS_SCRIPT_CODE = `// Block IDs — must match the app config
+var BLOCK_IDS = ['prog_1','es_1','re_1','biz_1','cc_1','es_2','re_2','re_3','es_3','gym_1','biz_2','es_4','re_4','prog_2'];
 
+function doGet(e) {
+  var sheet = getSheet();
+  var data = sheet.getDataRange().getValues();
+  var result = {};
+  for (var i = 1; i < data.length; i++) {
+    if (!data[i][0]) continue;
+    var dateStr = toDateStr(data[i][0]);
+    result[dateStr] = {};
+    for (var j = 0; j < BLOCK_IDS.length; j++) {
+      if (data[i][j + 1]) result[dateStr][BLOCK_IDS[j]] = data[i][j + 1];
+    }
+  }
+  return ContentService.createTextOutput(JSON.stringify({ok:true, data:result}))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function doPost(e) {
+  var payload = JSON.parse(e.postData.contents);
+  var sheet = getSheet();
+  var data = sheet.getDataRange().getValues();
+  var dateKey = payload.date;
+  var dayLog = payload.log || {};
+
+  var rowIdx = -1;
+  for (var i = 1; i < data.length; i++) {
+    if (toDateStr(data[i][0]) === dateKey) { rowIdx = i + 1; break; }
+  }
+
+  var rowData = BLOCK_IDS.map(function(id) { return dayLog[id] || ''; });
+
+  if (rowIdx === -1) {
+    sheet.appendRow([dateKey].concat(rowData));
+  } else {
+    sheet.getRange(rowIdx, 2, 1, rowData.length).setValues([rowData]);
+  }
+  return ContentService.createTextOutput(JSON.stringify({ok:true}))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function getSheet() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var s = ss.getSheetByName('Log');
+  if (!s) {
+    s = ss.insertSheet('Log');
+    s.appendRow(['date'].concat(BLOCK_IDS));
+  }
+  return s;
+}
+
+// Safely convert a cell value to yyyy-MM-dd string.
+// Google Sheets auto-formats date-like strings as Date objects,
+// so we can't do a straight string comparison.
+function toDateStr(val) {
+  if (val instanceof Date) return Utilities.formatDate(val, 'UTC', 'yyyy-MM-dd');
+  return String(val).slice(0, 10);
+}`.trim();
+
+document.getElementById('script-code').textContent = APPS_SCRIPT_CODE;
+
+function toggleScript() {
+  const block = document.getElementById('script-block');
+  block.style.display = block.style.display === 'none' ? 'block' : 'none';
+}
+
+function copyScript() {
+  navigator.clipboard.writeText(APPS_SCRIPT_CODE).then(() => {
+    const btn = event.target;
+    const orig = btn.textContent;
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = orig, 2000);
+  });
+}
 
 async function syncFromDrive() {
   if (!scriptUrl) return;
