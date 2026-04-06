@@ -62,6 +62,12 @@ header {
 .sync-btn.syncing { border-color: var(--work); color: var(--work); }
 .sync-btn.error { border-color: var(--skip); color: var(--skip); }
 .sync-dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+.settings-btn {
+  background: none; border: none; color: var(--muted); font-size: 16px;
+  cursor: pointer; padding: 4px; line-height: 1; transition: color 0.15s;
+  flex-shrink: 0;
+}
+.settings-btn:hover { color: var(--accent); }
 
 /* ── NAV ── */
 nav {
@@ -463,6 +469,7 @@ body.overlay-open { overflow: hidden; }
         <div class="sync-dot"></div>
         <span id="sync-label">Local</span>
       </button>
+      <button class="settings-btn" onclick="showOverlay()" title="Settings">⚙</button>
     </header>
     <nav>
       <button class="active" onclick="showView('today')">Today</button>
