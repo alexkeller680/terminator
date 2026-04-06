@@ -56,6 +56,7 @@ header {
 .sync-btn:hover { border-color: var(--accent); color: var(--accent); }
 .sync-btn.synced { border-color: var(--done); color: var(--done); }
 .sync-btn.syncing { border-color: var(--work); color: var(--work); }
+.sync-btn.error { border-color: var(--skip); color: var(--skip); }
 .sync-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
 
 /* ── NAV ── */
@@ -503,7 +504,6 @@ const LS_SKIP  = 'trm_skip_sync';
 let log = {};
 let scriptUrl = localStorage.getItem(LS_URL) || '';
 let skipSync  = localStorage.getItem(LS_SKIP) === '1';
-let syncing   = false;
 
 function loadLocal() {
   try { log = JSON.parse(localStorage.getItem(LS_LOG)) || {}; }
@@ -517,56 +517,6 @@ function saveLocal() {
 // The Apps Script acts as a proxy that reads/writes a Google Sheet
 // This avoids any OAuth complexity — it uses the user's own Google session
 
-const APPS_SCRIPT_CODE = `
-function doGet(e) {
-  var sheet = getSheet();
-  var data = sheet.getDataRange().getValues();
-  var result = {};
-  for (var i = 1; i < data.length; i++) {
-    if (data[i][0]) result[data[i][0]] = JSON.parse(data[i][1] || '{}');
-  }
-  return ContentService.createTextOutput(JSON.stringify({ok:true, data:result}))
-    .setMimeType(ContentService.MimeType.JSON);
-}
-
-function doPost(e) {
-  var payload = JSON.parse(e.postData.contents);
-  var sheet = getSheet();
-  var data = sheet.getDataRange().getValues();
-  var dateKey = payload.date;
-  var dayLog  = JSON.stringify(payload.log);
-  for (var i = 1; i < data.length; i++) {
-    if (data[i][0] === dateKey) {
-      sheet.getRange(i+1, 2).setValue(dayLog);
-      return ContentService.createTextOutput(JSON.stringify({ok:true}))
-        .setMimeType(ContentService.MimeType.JSON);
-    }
-  }
-  sheet.appendRow([dateKey, dayLog]);
-  return ContentService.createTextOutput(JSON.stringify({ok:true}))
-    .setMimeType(ContentService.MimeType.JSON);
-}
-
-function getSheet() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var s  = ss.getSheetByName('Log');
-  if (!s) {
-    s = ss.insertSheet('Log');
-    s.appendRow(['date','log']);
-  }
-  return s;
-}
-`.trim();
-
-document.getElementById('script-code').textContent = APPS_SCRIPT_CODE;
-
-function copyScript() {
-  navigator.clipboard.writeText(APPS_SCRIPT_CODE).then(() => {
-    const btn = event.target;
-    btn.textContent = 'Copied!';
-    setTimeout(() => btn.textContent = 'Copy Script', 2000);
-  });
-}
 
 async function syncFromDrive() {
   if (!scriptUrl) return;
@@ -576,15 +526,17 @@ async function syncFromDrive() {
       method: 'GET',
       mode: 'cors',
     });
+    if (!res.ok) { setSyncState('error'); return; }
     const json = await res.json();
     if (json.ok && json.data) {
       Object.assign(log, json.data);
       saveLocal();
+      setSyncState('synced');
+    } else {
+      setSyncState('error');
     }
-    setSyncState('synced');
   } catch(e) {
-    // CORS from local file — use no-cors image trick as fallback ping
-    setSyncState('synced'); // URL is saved, sync will work when hosted
+    setSyncState('error');
   }
 }
 
@@ -592,7 +544,6 @@ async function syncToDrive(dateStr) {
   if (!scriptUrl) return;
   try {
     setSyncState('syncing');
-    // Use fetch with no-cors for POST (fire-and-forget from local file)
     await fetch(scriptUrl, {
       method: 'POST',
       mode: 'no-cors',
@@ -600,7 +551,7 @@ async function syncToDrive(dateStr) {
     });
     setSyncState('synced');
   } catch(e) {
-    setSyncState('synced'); // saved locally, will sync next open
+    setSyncState('error');
   }
 }
 
@@ -610,6 +561,7 @@ function setSyncState(state) {
   btn.className = 'sync-btn';
   if (state === 'syncing') { btn.classList.add('syncing'); lbl.textContent = 'Syncing…'; }
   else if (state === 'synced') { btn.classList.add('synced'); lbl.textContent = 'Synced'; }
+  else if (state === 'error') { btn.classList.add('error'); lbl.textContent = 'Sync error'; }
   else { lbl.textContent = scriptUrl ? 'Drive' : 'Local'; }
 }
 
@@ -641,9 +593,9 @@ async function saveScriptUrl() {
   localStorage.setItem(LS_URL, url);
   localStorage.removeItem(LS_SKIP);
   hideOverlay();
-  setSyncState('synced');
+  setSyncState('syncing');
   render();
-  syncFromDrive().then(render).catch(()=>{});
+  syncFromDrive().then(render).catch(()=>render());
 }
 
 function skipSetup() {
@@ -672,13 +624,6 @@ let todayOff = 0, weekOff = 0, monthOff = 0;
 function countsDone(s) { return s==='done'||s==='later'||s==='yes'; }
 function getState(dStr, id) { return (log[dStr]&&log[dStr][id])||null; }
 
-function setState(dStr, id, newState) {
-  if (!log[dStr]) log[dStr] = {};
-  log[dStr][id] = (log[dStr][id]===newState) ? null : newState;
-  saveLocal();
-  syncToDrive(dStr);
-  render();
-}
 
 /* ── DAY STATS ── */
 function dayComp(dStr, dow) {
@@ -845,8 +790,6 @@ function renderToday(app) {
   app.innerHTML = html;
 }
 
-// handle toggle off for simple blocks
-const _origSetState = setState;
 function setState(dStr, id, newState) {
   if (!log[dStr]) log[dStr] = {};
   if (newState.startsWith('null_') || log[dStr][id]===newState) {
@@ -1036,7 +979,7 @@ function renderMonth(app) {
 /* ── INIT ── */
 loadLocal();
 if (!scriptUrl && !skipSync) showOverlay();
-setSyncState(scriptUrl ? 'synced' : 'local');
+setSyncState(scriptUrl ? 'syncing' : 'local');
 if (scriptUrl) syncFromDrive().then(render).catch(()=>render());
 else render();
 </script>
