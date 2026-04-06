@@ -56,6 +56,7 @@ header {
 .sync-btn:hover { border-color: var(--accent); color: var(--accent); }
 .sync-btn.synced { border-color: var(--done); color: var(--done); }
 .sync-btn.syncing { border-color: var(--work); color: var(--work); }
+.sync-btn.error { border-color: var(--skip); color: var(--skip); }
 .sync-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
 
 /* ── NAV ── */
@@ -576,15 +577,17 @@ async function syncFromDrive() {
       method: 'GET',
       mode: 'cors',
     });
+    if (!res.ok) { setSyncState('error'); return; }
     const json = await res.json();
     if (json.ok && json.data) {
       Object.assign(log, json.data);
       saveLocal();
+      setSyncState('synced');
+    } else {
+      setSyncState('error');
     }
-    setSyncState('synced');
   } catch(e) {
-    // CORS from local file — use no-cors image trick as fallback ping
-    setSyncState('synced'); // URL is saved, sync will work when hosted
+    setSyncState('error');
   }
 }
 
@@ -592,7 +595,6 @@ async function syncToDrive(dateStr) {
   if (!scriptUrl) return;
   try {
     setSyncState('syncing');
-    // Use fetch with no-cors for POST (fire-and-forget from local file)
     await fetch(scriptUrl, {
       method: 'POST',
       mode: 'no-cors',
@@ -600,7 +602,7 @@ async function syncToDrive(dateStr) {
     });
     setSyncState('synced');
   } catch(e) {
-    setSyncState('synced'); // saved locally, will sync next open
+    setSyncState('error');
   }
 }
 
@@ -610,6 +612,7 @@ function setSyncState(state) {
   btn.className = 'sync-btn';
   if (state === 'syncing') { btn.classList.add('syncing'); lbl.textContent = 'Syncing…'; }
   else if (state === 'synced') { btn.classList.add('synced'); lbl.textContent = 'Synced'; }
+  else if (state === 'error') { btn.classList.add('error'); lbl.textContent = 'Sync error'; }
   else { lbl.textContent = scriptUrl ? 'Drive' : 'Local'; }
 }
 
@@ -672,13 +675,6 @@ let todayOff = 0, weekOff = 0, monthOff = 0;
 function countsDone(s) { return s==='done'||s==='later'||s==='yes'; }
 function getState(dStr, id) { return (log[dStr]&&log[dStr][id])||null; }
 
-function setState(dStr, id, newState) {
-  if (!log[dStr]) log[dStr] = {};
-  log[dStr][id] = (log[dStr][id]===newState) ? null : newState;
-  saveLocal();
-  syncToDrive(dStr);
-  render();
-}
 
 /* ── DAY STATS ── */
 function dayComp(dStr, dow) {
@@ -845,8 +841,6 @@ function renderToday(app) {
   app.innerHTML = html;
 }
 
-// handle toggle off for simple blocks
-const _origSetState = setState;
 function setState(dStr, id, newState) {
   if (!log[dStr]) log[dStr] = {};
   if (newState.startsWith('null_') || log[dStr][id]===newState) {
@@ -1036,7 +1030,7 @@ function renderMonth(app) {
 /* ── INIT ── */
 loadLocal();
 if (!scriptUrl && !skipSync) showOverlay();
-setSyncState(scriptUrl ? 'synced' : 'local');
+setSyncState(scriptUrl ? 'syncing' : 'local');
 if (scriptUrl) syncFromDrive().then(render).catch(()=>render());
 else render();
 </script>
