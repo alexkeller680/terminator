@@ -1,26 +1,22 @@
-// ─────────────────────────────────────────────────────────────────
-//  BLOCK METADATA — must match the app config
-// ─────────────────────────────────────────────────────────────────
+// == BLOCK METADATA (must match the app config) ==
 var BLOCKS = [
-  {id:'prog_1', name:'Programming Ω', time:'06:00–07:00'},
-  {id:'es_1',   name:'Spanish',        time:'07:00 · 15m'},
-  {id:'re_1',   name:'Reading',        time:'07:15 · 15m'},
-  {id:'biz_1',  name:'Biz',            time:'07:30–08:30'},
-  {id:'cc_1',   name:'Cold Calling',   time:'09:00–11:00'},
-  {id:'es_2',   name:'Spanish',        time:'11:45 · 15m'},
-  {id:'re_2',   name:'Reading',        time:'11:30 · 15m'},
-  {id:'re_3',   name:'Reading',        time:'14:00 · 15m'},
-  {id:'es_3',   name:'Spanish',        time:'14:15 · 15m'},
-  {id:'gym_1',  name:'Gym / Cardio',   time:'16:00–18:00'},
-  {id:'biz_2',  name:'Biz',            time:'18:00–20:00'},
-  {id:'es_4',   name:'Spanish',        time:'20:00 · 15m'},
-  {id:'re_4',   name:'Reading',        time:'20:15 · 15m'},
-  {id:'prog_2', name:'Programming Ω', time:'21:00–22:00'},
+  {id:'prog_1', name:'Programming',  time:'06:00-07:00'},
+  {id:'es_1',   name:'Spanish',      time:'07:00 15m'  },
+  {id:'re_1',   name:'Reading',      time:'07:15 15m'  },
+  {id:'biz_1',  name:'Biz',          time:'07:30-08:30'},
+  {id:'cc_1',   name:'Cold Calling', time:'09:00-11:00'},
+  {id:'es_2',   name:'Spanish',      time:'11:45 15m'  },
+  {id:'re_2',   name:'Reading',      time:'11:30 15m'  },
+  {id:'re_3',   name:'Reading',      time:'14:00 15m'  },
+  {id:'es_3',   name:'Spanish',      time:'14:15 15m'  },
+  {id:'gym_1',  name:'Gym / Cardio', time:'16:00-18:00'},
+  {id:'biz_2',  name:'Biz',          time:'18:00-20:00'},
+  {id:'es_4',   name:'Spanish',      time:'20:00 15m'  },
+  {id:'re_4',   name:'Reading',      time:'20:15 15m'  },
+  {id:'prog_2', name:'Programming',  time:'21:00-22:00'},
 ];
 
-// ─────────────────────────────────────────────────────────────────
-//  WEB APP ENDPOINTS
-// ─────────────────────────────────────────────────────────────────
+// == WEB APP ENDPOINTS ==
 
 function doGet(e) {
   var sheet  = getSheet();
@@ -53,7 +49,7 @@ function doPost(e) {
       if (!data[i][0] || !data[i][1]) continue;
       if (toDateStr(data[i][0]) !== dateKey) continue;
       var blockId = data[i][1];
-      if (!(blockId in dayLog)) continue; // not touched this session — leave alone
+      if (!(blockId in dayLog)) continue;
       sheet.getRange(i + 1, 5).setValue(dayLog[blockId] || '');
     }
 
@@ -69,12 +65,10 @@ function doOptions(e) {
     .setMimeType(ContentService.MimeType.TEXT);
 }
 
-// ─────────────────────────────────────────────────────────────────
-//  SETUP — run manually from the Apps Script editor
-// ─────────────────────────────────────────────────────────────────
+// == SETUP (run manually from the Apps Script editor) ==
 
-// Step 1: Run this to populate the Log sheet with all weekday rows.
-// Safe to re-run — preserves existing statuses and notes.
+// Step 1: Populate the Log sheet with all weekday rows.
+// Safe to re-run -- preserves existing statuses and notes.
 function setupSheet() {
   var ss    = SpreadsheetApp.getActiveSpreadsheet();
   var tz    = ss.getSpreadsheetTimeZone();
@@ -93,7 +87,7 @@ function setupSheet() {
   var lastRow = sheet.getLastRow();
   if (lastRow > 1) sheet.deleteRows(2, lastRow - 1);
 
-  // Generate rows: 30 days back → 150 days forward (~6 months), weekdays only
+  // Generate rows: 30 days back, 150 days forward (~6 months), weekdays only
   var rows  = [];
   var start = new Date();
   start.setDate(start.getDate() - 30);
@@ -117,38 +111,32 @@ function setupSheet() {
   SpreadsheetApp.getUi().alert('Done! Log sheet has ' + rows.length + ' rows.\n\nNow run setupViews() to create the Daily / Weekly / Monthly sheets.');
 }
 
-// Step 2: Run this to create the three view sheets.
+// Step 2: Create the three view sheets.
 function setupViews() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   setupDailyView(ss);
   setupWeeklyView(ss);
   setupMonthlyView(ss);
-  SpreadsheetApp.getUi().alert('Done! Sheets created: Daily, Weekly, Monthly.\nThey auto-update whenever you open them.');
+  SpreadsheetApp.getUi().alert('Done! Sheets created: Daily, Weekly, Monthly. They auto-update whenever you open them.');
 }
 
-// ─────────────────────────────────────────────────────────────────
-//  LOG SHEET FORMATTING
-// ─────────────────────────────────────────────────────────────────
+// == LOG SHEET FORMATTING ==
 
 function formatLogSheet(sheet) {
   var lastRow = Math.max(sheet.getLastRow(), 2);
 
-  // Header row styling
   sheet.getRange(1, 1, 1, 6)
     .setBackground('#263238').setFontColor('#FFFFFF')
     .setFontWeight('bold').setFontSize(10);
 
-  // Column widths
-  sheet.setColumnWidth(1, 110); // Date
-  sheet.setColumnWidth(2, 80);  // Block ID
-  sheet.setColumnWidth(3, 160); // Activity
-  sheet.setColumnWidth(4, 110); // Time
-  sheet.setColumnWidth(5, 90);  // Status
-  sheet.setColumnWidth(6, 260); // Note
+  sheet.setColumnWidth(1, 110);
+  sheet.setColumnWidth(2, 80);
+  sheet.setColumnWidth(3, 160);
+  sheet.setColumnWidth(4, 110);
+  sheet.setColumnWidth(5, 90);
+  sheet.setColumnWidth(6, 260);
 
   sheet.setFrozenRows(1);
-
-  // Status column conditional formatting
   applyStatusFormatting(sheet, sheet.getRange(2, 5, lastRow - 1, 1));
 }
 
@@ -171,65 +159,56 @@ function applyStatusFormatting(sheet, range) {
   sheet.setConditionalFormatRules(rules);
 }
 
-// ─────────────────────────────────────────────────────────────────
-//  DAILY VIEW
-// ─────────────────────────────────────────────────────────────────
+// == DAILY VIEW ==
 
 function setupDailyView(ss) {
   var s = ss.getSheetByName('Daily');
   if (s) ss.deleteSheet(s);
   s = ss.insertSheet('Daily');
 
-  // Title
   s.getRange('A1:D1').merge()
-   .setFormula('="📅  Today — " & TEXT(TODAY(),"dddd, d. MMMM yyyy")')
+   .setFormula('="Today: "&TEXT(TODAY(),"dddd, d. MMMM yyyy")')
    .setBackground('#263238').setFontColor('#FFFFFF')
    .setFontSize(13).setFontWeight('bold')
    .setVerticalAlignment('middle').setHorizontalAlignment('left');
   s.setRowHeight(1, 40);
 
-  // Column headers
   s.getRange('A2:D2').setValues([['Time', 'Activity', 'Status', 'Note']]);
   s.getRange('A2:D2').setBackground('#37474F').setFontColor('#FFFFFF').setFontWeight('bold');
 
-  // Data — FILTER pulls today's rows from Log (Time, Activity, Status, Note)
+  // FILTER pulls today's rows from Log: Time, Activity, Status, Note
   s.getRange('A3').setFormula(
-    '=IFERROR(' +
-      'FILTER({Log!D:D,Log!C:C,Log!E:E,Log!F:F},' +
-      'TEXT(Log!A:A,"yyyy-mm-dd")=TEXT(TODAY(),"yyyy-mm-dd")),' +
-    '"No data for today — open the app and log some blocks!")'
+    '=IFERROR(FILTER({Log!D:D,Log!C:C,Log!E:E,Log!F:F},' +
+    'TEXT(Log!A:A,"yyyy-mm-dd")=TEXT(TODAY(),"yyyy-mm-dd")),' +
+    '"No data for today.")'
   );
 
-  s.setColumnWidth(1, 120); // Time
-  s.setColumnWidth(2, 200); // Activity
-  s.setColumnWidth(3, 100); // Status
-  s.setColumnWidth(4, 320); // Note
+  s.setColumnWidth(1, 120);
+  s.setColumnWidth(2, 200);
+  s.setColumnWidth(3, 100);
+  s.setColumnWidth(4, 320);
   s.setFrozenRows(2);
-
   applyStatusFormatting(s, s.getRange('C3:C50'));
 }
 
-// ─────────────────────────────────────────────────────────────────
-//  WEEKLY VIEW
-// ─────────────────────────────────────────────────────────────────
+// == WEEKLY VIEW ==
 
 function setupWeeklyView(ss) {
   var s = ss.getSheetByName('Weekly');
   if (s) ss.deleteSheet(s);
   s = ss.insertSheet('Weekly');
 
-  // Title
   s.getRange('A1:G1').merge()
-   .setFormula('="📊  Week: " & TEXT(TODAY()-WEEKDAY(TODAY(),2)+1,"d. MMM") & " – " & TEXT(TODAY()-WEEKDAY(TODAY(),2)+5,"d. MMM yyyy")')
+   .setFormula('="Week: "&TEXT(TODAY()-WEEKDAY(TODAY(),2)+1,"d. MMM")&" - "&TEXT(TODAY()-WEEKDAY(TODAY(),2)+5,"d. MMM yyyy")')
    .setBackground('#263238').setFontColor('#FFFFFF')
    .setFontSize(13).setFontWeight('bold')
    .setVerticalAlignment('middle').setHorizontalAlignment('left');
   s.setRowHeight(1, 40);
 
-  // Day header row (row 2): Activity | Time | Mon | Tue | Wed | Thu | Fri
   s.getRange('A2').setValue('Activity');
   s.getRange('B2').setValue('Time');
-  var dayOffsets = [1, 2, 3, 4, 5]; // Mon=1 … Fri=5 relative to start of week
+
+  var dayOffsets = [1, 2, 3, 4, 5];
   var colLetters = ['C', 'D', 'E', 'F', 'G'];
   for (var d = 0; d < 5; d++) {
     s.getRange(colLetters[d] + '2')
@@ -239,17 +218,14 @@ function setupWeeklyView(ss) {
   s.getRange('A2:G2').setBackground('#37474F').setFontColor('#FFFFFF').setFontWeight('bold');
   s.setRowHeight(2, 30);
 
-  // Block rows (rows 3–16)
   for (var i = 0; i < BLOCKS.length; i++) {
     var row = i + 3;
     var b   = BLOCKS[i];
     s.getRange(row, 1).setValue(b.name);
     s.getRange(row, 2).setValue(b.time).setHorizontalAlignment('left');
 
-    // Status cell for each weekday
     for (var d = 0; d < 5; d++) {
-      var offset = dayOffsets[d]; // 1–5
-      // ARRAYFORMULA(INDEX/MATCH) to find status for this block on this day
+      var offset  = dayOffsets[d];
       var formula =
         '=IFERROR(ARRAYFORMULA(INDEX(Log!$E:$E,MATCH(1,' +
         '(TEXT(Log!$A:$A,"yyyy-mm-dd")=TEXT(TODAY()-WEEKDAY(TODAY(),2)+' + offset + ',"yyyy-mm-dd"))' +
@@ -257,44 +233,38 @@ function setupWeeklyView(ss) {
       s.getRange(row, d + 3).setFormula(formula).setHorizontalAlignment('center');
     }
 
-    // Alternating row background
     var bg = (i % 2 === 0) ? '#F8F9FA' : '#ECEFF1';
     s.getRange(row, 1, 1, 7).setBackground(bg);
     s.setRowHeight(row, 26);
   }
 
-  // Conditional formatting on all status cells (C3:G16)
   applyStatusFormatting(s, s.getRange('C3:G16'));
 
-  s.setColumnWidth(1, 175); // Activity
-  s.setColumnWidth(2, 115); // Time
-  for (var col = 3; col <= 7; col++) s.setColumnWidth(col, 105); // Day columns
+  s.setColumnWidth(1, 175);
+  s.setColumnWidth(2, 115);
+  for (var col = 3; col <= 7; col++) s.setColumnWidth(col, 105);
   s.setFrozenRows(2);
 }
 
-// ─────────────────────────────────────────────────────────────────
-//  MONTHLY VIEW
-// ─────────────────────────────────────────────────────────────────
+// == MONTHLY VIEW ==
 
 function setupMonthlyView(ss) {
   var s = ss.getSheetByName('Monthly');
   if (s) ss.deleteSheet(s);
   s = ss.insertSheet('Monthly');
 
-  // Title
   s.getRange('A1:G1').merge()
-   .setFormula('="📈  " & TEXT(TODAY(),"MMMM yyyy") & " — Overview"')
+   .setFormula('=TEXT(TODAY(),"MMMM yyyy")&" - Overview"')
    .setBackground('#263238').setFontColor('#FFFFFF')
    .setFontSize(13).setFontWeight('bold')
    .setVerticalAlignment('middle').setHorizontalAlignment('left');
   s.setRowHeight(1, 40);
 
-  // Headers
-  s.getRange('A2:G2').setValues([['Date', '✓ Done', '✗ Skipped', '🏢 Work', '↻ Later', 'Total', '% Done']]);
+  s.getRange('A2:G2').setValues([['Date', 'Done', 'Skipped', 'Work', 'Later', 'Total', '% Done']]);
   s.getRange('A2:G2').setBackground('#37474F').setFontColor('#FFFFFF').setFontWeight('bold');
   s.setRowHeight(2, 30);
 
-  // Column A: unique dates logged this month (via formula)
+  // Column A: unique dates with logged data this month
   s.getRange('A3').setFormula(
     '=IFERROR(SORT(UNIQUE(FILTER(' +
       'TEXT(Log!A2:A,"yyyy-mm-dd"),' +
@@ -304,9 +274,8 @@ function setupMonthlyView(ss) {
     '))),"")'
   );
 
-  // Columns B–G: COUNTIFS per date (up to 23 weekdays per month)
   for (var r = 3; r <= 25; r++) {
-    var d = 'A' + r;
+    var d    = 'A' + r;
     var base = 'COUNTIFS(TEXT(Log!$A:$A,"yyyy-mm-dd"),' + d + ',Log!$E:$E,';
     s.getRange(r, 2).setFormula('=IF(' + d + '="",,'+base+'"done"))');
     s.getRange(r, 3).setFormula('=IF(' + d + '="",,'+base+'"skip"))');
@@ -314,13 +283,11 @@ function setupMonthlyView(ss) {
     s.getRange(r, 5).setFormula('=IF(' + d + '="",,'+base+'"later"))');
     s.getRange(r, 6).setFormula('=IF(' + d + '="",,COUNTIFS(TEXT(Log!$A:$A,"yyyy-mm-dd"),' + d + ',Log!$E:$E,"<>"))');
     s.getRange(r, 7).setFormula('=IF(OR(' + d + '="",F' + r + '=0),,B' + r + '/14)').setNumberFormat('0%');
-
     var bg = (r % 2 === 0) ? '#F8F9FA' : '#ECEFF1';
     s.getRange(r, 1, 1, 7).setBackground(bg);
     s.setRowHeight(r, 24);
   }
 
-  // % Done column: green ≥ 80%, yellow 50–80%, red < 50%
   var pctRange = s.getRange('G3:G25');
   s.setConditionalFormatRules([
     SpreadsheetApp.newConditionalFormatRule()
@@ -334,19 +301,17 @@ function setupMonthlyView(ss) {
       .setRanges([pctRange]).build(),
   ]);
 
-  s.setColumnWidth(1, 110); // Date
-  s.setColumnWidth(2, 85);  // Done
-  s.setColumnWidth(3, 95);  // Skipped
-  s.setColumnWidth(4, 110); // Work
-  s.setColumnWidth(5, 100); // Later
-  s.setColumnWidth(6, 90);  // Total
-  s.setColumnWidth(7, 85);  // % Done
+  s.setColumnWidth(1, 110);
+  s.setColumnWidth(2, 75);
+  s.setColumnWidth(3, 80);
+  s.setColumnWidth(4, 75);
+  s.setColumnWidth(5, 75);
+  s.setColumnWidth(6, 75);
+  s.setColumnWidth(7, 80);
   s.setFrozenRows(2);
 }
 
-// ─────────────────────────────────────────────────────────────────
-//  HELPERS
-// ─────────────────────────────────────────────────────────────────
+// == HELPERS ==
 
 function getSheet() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
