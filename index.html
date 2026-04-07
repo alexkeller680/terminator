@@ -94,32 +94,47 @@ main { padding: 20px 20px 100px; max-width: 620px; width: 100%; }
   .app-shell { flex-direction: row; align-items: flex-start; min-height: 100vh; }
   .sidebar {
     display: flex; flex-direction: column;
-    width: 220px; flex-shrink: 0;
+    width: 240px; flex-shrink: 0;
     height: 100vh; position: sticky; top: 0;
     border-right: 1px solid var(--border);
     overflow: hidden;
   }
   header {
     flex-direction: column; align-items: flex-start;
-    padding: 36px 24px 20px; border-bottom: none;
+    padding: 40px 28px 24px; border-bottom: none;
     position: static; background: transparent;
     gap: 0;
   }
-  .logo { font-size: 20px; margin-bottom: 28px; }
-  .sync-btn { font-size: 12px; }
+  .logo { font-size: 22px; margin-bottom: 32px; }
+  .sync-btn { font-size: 12px; margin-bottom: 10px; }
+  .settings-btn { margin-top: 8px; }
   nav {
     flex-direction: column; align-items: stretch;
-    border-bottom: none; padding: 8px 12px;
-    gap: 3px; overflow: visible;
+    border-bottom: none; padding: 8px 16px;
+    gap: 4px; overflow: visible;
   }
   nav button {
     text-align: left; border-radius: 10px;
-    padding: 11px 16px; font-size: 13px;
+    padding: 12px 18px; font-size: 14px;
   }
   main {
-    flex: 1; max-width: 680px;
-    padding: 36px 48px 100px;
+    flex: 1;
+    padding: 48px 0 100px;
+    display: flex; justify-content: center;
   }
+  #app {
+    width: 100%; max-width: 760px;
+    padding: 0 48px;
+  }
+  .tl-card { padding: 18px 20px; }
+  .tl-block-name { font-size: 18px; }
+  .tl-block-meta { font-size: 12px; margin-top: 5px; }
+  .tl-actions { margin-top: 14px; gap: 8px; }
+  .act-btn { height: 54px; border-radius: 10px; font-size: 16px; }
+  .act-lbl { font-size: 10px; }
+  .tl-time { width: 60px; padding-top: 20px; font-size: 12px; }
+  .tl-dot-wrap { padding-top: 24px; }
+  .timeline::before { left: 60px; }
 }
 
 /* ── DAY NAV ── */
@@ -869,7 +884,6 @@ function renderToday(app) {
       <div class="legend">
         <div class="leg-item"><div class="leg-dot" style="background:var(--done)"></div>Done</div>
         <div class="leg-item"><div class="leg-dot" style="background:var(--skip)"></div>Skipped</div>
-        <div class="leg-item"><div class="leg-dot" style="background:var(--work)"></div>Work blocked</div>
         <div class="leg-item"><div class="leg-dot" style="background:var(--later)"></div>Did it later</div>
       </div>`;
   }
@@ -925,7 +939,6 @@ function renderToday(app) {
             <div class="tl-actions">
               <button class="act-btn a-done ${state==='done'?'active':''}" onclick="setState('${dStr}','${b.id}','done')">✓<span class="act-lbl">Done</span></button>
               <button class="act-btn a-skip ${state==='skip'?'active':''}" onclick="setState('${dStr}','${b.id}','skip')">✗<span class="act-lbl">Skip</span></button>
-              <button class="act-btn a-work ${state==='work'?'active':''}" onclick="setState('${dStr}','${b.id}','work')">🏢<span class="act-lbl">Work</span></button>
               <button class="act-btn a-later ${state==='later'?'active':''}" onclick="setState('${dStr}','${b.id}','later')">↻<span class="act-lbl">Later</span></button>
             </div>
           </div>
@@ -1019,7 +1032,6 @@ function renderWeek(app) {
     <div class="legend" style="margin-bottom:14px">
       <div class="leg-item"><div class="leg-dot" style="background:var(--done)"></div>Done</div>
       <div class="leg-item"><div class="leg-dot" style="background:var(--skip)"></div>Skipped</div>
-      <div class="leg-item"><div class="leg-dot" style="background:var(--work)"></div>Work</div>
       <div class="leg-item"><div class="leg-dot" style="background:var(--later)"></div>Later</div>
     </div>
     <div class="week-scroll">
@@ -1108,7 +1120,7 @@ function renderMonth(app) {
     <div class="stat-grid">
       <div class="stat-card"><div class="stat-num">${overallPct}%</div><div class="stat-lbl">Done</div></div>
       <div class="stat-card"><div class="stat-num">${streak}</div><div class="stat-lbl">Streak</div></div>
-      <div class="stat-card"><div class="stat-num">${totSkip+totWork}</div><div class="stat-lbl">Missed</div></div>
+      <div class="stat-card"><div class="stat-num">${totSkip}</div><div class="stat-lbl">Skipped</div></div>
     </div>
     <div class="section-lbl">By Category</div>
     <div class="cat-bars">${catRowsHtml}</div>
