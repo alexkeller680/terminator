@@ -1,16 +1,34 @@
-var BLOCK_IDS = ['prog_1','es_1','re_1','biz_1','cc_1','es_2','re_2','re_3','es_3','gym_1','biz_2','es_4','re_4','prog_2'];
+// Block metadata — must match the app config
+var BLOCKS = [
+  {id:'prog_1', name:'Programming Ω',  time:'06:00–07:00', cat:'Mental'  },
+  {id:'es_1',   name:'Spanish',         time:'07:00 · 15m',  cat:'Spanish' },
+  {id:'re_1',   name:'Reading',         time:'07:15 · 15m',  cat:'Reading' },
+  {id:'biz_1',  name:'Biz',             time:'07:30–08:30', cat:'Biz'     },
+  {id:'cc_1',   name:'Cold Calling',    time:'09:00–11:00', cat:'Work'    },
+  {id:'es_2',   name:'Spanish',         time:'11:45 · 15m',  cat:'Spanish' },
+  {id:'re_2',   name:'Reading',         time:'11:30 · 15m',  cat:'Reading' },
+  {id:'re_3',   name:'Reading',         time:'14:00 · 15m',  cat:'Reading' },
+  {id:'es_3',   name:'Spanish',         time:'14:15 · 15m',  cat:'Spanish' },
+  {id:'gym_1',  name:'Gym / Cardio',    time:'16:00–18:00', cat:'Gym'     },
+  {id:'biz_2',  name:'Biz',             time:'18:00–20:00', cat:'Biz'     },
+  {id:'es_4',   name:'Spanish',         time:'20:00 · 15m',  cat:'Spanish' },
+  {id:'re_4',   name:'Reading',         time:'20:15 · 15m',  cat:'Reading' },
+  {id:'prog_2', name:'Programming Ω',  time:'21:00–22:00', cat:'Mental'  },
+];
 
 function doGet(e) {
   var sheet = getSheet();
   var data = sheet.getDataRange().getValues();
   var result = {};
+  // Columns: Date(0) | Activity(1) | Time(2) | Category(3) | Status(4) | Note(5)
   for (var i = 1; i < data.length; i++) {
     if (!data[i][0]) continue;
     var dateStr = toDateStr(data[i][0]);
-    result[dateStr] = {};
-    for (var j = 0; j < BLOCK_IDS.length; j++) {
-      if (data[i][j + 1]) result[dateStr][BLOCK_IDS[j]] = data[i][j + 1];
-    }
+    var blockId = data[i][1];
+    var status  = data[i][4];
+    if (!blockId) continue;
+    if (!result[dateStr]) result[dateStr] = {};
+    if (status) result[dateStr][blockId] = status;
   }
   return ContentService.createTextOutput(JSON.stringify({ok:true, data:result}))
     .setMimeType(ContentService.MimeType.JSON);
@@ -21,29 +39,33 @@ function doPost(e) {
   lock.waitLock(15000);
   try {
     var payload = JSON.parse(e.postData.contents);
-    var sheet = getSheet();
-    var data = sheet.getDataRange().getValues();
+    var sheet   = getSheet();
     var dateKey = payload.date;
-    var dayLog = payload.log || {};
+    var dayLog  = payload.log || {};
 
-    // Collect all row indices matching this date (duplicates from old bug)
-    var matchingRows = [];
-    for (var i = 1; i < data.length; i++) {
-      if (toDateStr(data[i][0]) === dateKey) matchingRows.push(i + 1);
-    }
-
-    var rowData = BLOCK_IDS.map(function(id) { return dayLog[id] || ''; });
-
-    if (matchingRows.length === 0) {
-      sheet.appendRow([dateKey].concat(rowData));
-    } else {
-      // Update the first matching row
-      sheet.getRange(matchingRows[0], 2, 1, rowData.length).setValues([rowData]);
-      // Delete any duplicate rows (iterate in reverse to preserve indices)
-      for (var k = matchingRows.length - 1; k >= 1; k--) {
-        sheet.deleteRow(matchingRows[k]);
+    // Delete all existing rows for this date (in reverse to keep indices valid)
+    var data = sheet.getDataRange().getValues();
+    for (var i = data.length - 1; i >= 1; i--) {
+      if (data[i][0] && toDateStr(data[i][0]) === dateKey) {
+        sheet.deleteRow(i + 1);
       }
     }
+
+    // Build rows for every block that has a status logged
+    var rows = [];
+    for (var j = 0; j < BLOCKS.length; j++) {
+      var b      = BLOCKS[j];
+      var status = dayLog[b.id] || '';
+      if (!status) continue; // skip un-logged blocks
+      rows.push([dateKey, b.id, b.name, b.time, b.cat, status, '']); // Note col empty
+    }
+
+    // Batch-write all rows in one API call
+    if (rows.length > 0) {
+      var startRow = sheet.getLastRow() + 1;
+      sheet.getRange(startRow, 1, rows.length, rows[0].length).setValues(rows);
+    }
+
     return ContentService.createTextOutput(JSON.stringify({ok:true}))
       .setMimeType(ContentService.MimeType.JSON);
   } finally {
@@ -58,10 +80,11 @@ function doOptions(e) {
 
 function getSheet() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var s = ss.getSheetByName('Log');
+  var s  = ss.getSheetByName('Log');
   if (!s) {
     s = ss.insertSheet('Log');
-    s.appendRow(['date'].concat(BLOCK_IDS));
+    s.appendRow(['Date', 'Block ID', 'Activity', 'Time', 'Category', 'Status', 'Note']);
+    s.setFrozenRows(1);
   }
   return s;
 }
