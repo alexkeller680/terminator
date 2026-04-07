@@ -5,40 +5,66 @@ Here's the full summary:
 **What we built**
 A personal discipline tracker called **TERMINATOR** — a mobile-friendly web app to track whether you do your daily routine blocks. Not a productivity optimizer, just a simple "did you sit down and do the thing?" tracker.
 
-**The blocks tracked (Mon–Fri):**
-- Programming Ω × 2 (06:00 and 21:00) — mental programming / morning & evening routine
-- Spanish × 4 (15min blocks throughout the day)
-- Reading × 4 (15min blocks throughout the day)
-- Biz × 2 (07:30 and 18:00)
-- Cold Calling (09:00–11:00) — simple yes/no, 50+ dials
-- Gym / Cardio (16:00–18:00)
+**The blocks tracked (Mon-Fri):**
+- Programming x2 (06:00 and 21:00)
+- Spanish x4 (15min blocks throughout the day)
+- Reading x4 (15min blocks throughout the day)
+- Biz x2 (07:30 and 18:00)
+- Cold Calling (09:00-11:00) — simple yes/no, 50+ dials
+- Gym / Cardio (16:00-18:00)
 
-**Four logging states:** Done ✓ / Skipped ✗ / Work blocked 🏢 / Did it later ↻ — "later" counts as done for completion stats.
+**Four logging states:** Done / Skipped / Work blocked / Did it later
 
-**Three views:**
-- **Today** — chronological timeline, current block highlighted with pulsing dot
-- **Week** — full grid Mon–Fri with % per day
-- **Month** — overall %, streak, per-category bars, heatmap
+**Three views in the app:**
+- Today — chronological timeline, current block highlighted
+- Week — full grid Mon-Fri with % per day
+- Month — overall %, streak, per-category bars, heatmap
 
 **Key design decisions:**
-- Config-driven (block IDs never change, so history stays intact when you rename/adjust blocks)
+- Config-driven (block IDs never change, history stays intact)
 - Data stored in localStorage + syncs to Google Sheet via Apps Script
-- Hosted on GitHub Pages at **alexkeller680.github.io/terminator**
+- Hosted on GitHub Pages at alexkeller680.github.io/terminator
 
 ---
 
-**The setup journey:**
-1. Built as HTML file → realized localStorage is device-specific → added Google Drive sync
-2. Google Drive wouldn't serve the HTML file properly (converted it to a Doc) → moved to GitHub Pages
-3. Apps Script setup: created inside a Google Sheet via Extensions → Apps Script → deployed as Web App
-4. CORS issues blocked the sync from working properly → still troubleshooting
+**Google Sheets sync — current architecture (as of session 2)**
 
-**Current status:**
-- App is live on GitHub Pages ✅
-- Apps Script is deployed ✅
-- Sync button shows "Synced" but CORS is blocking actual data read/write ❌
-- Last step: clear localStorage, paste new Apps Script URL after redeploying with the latest script version
+The sync uses a pre-populated sheet (one row per block per weekday, 3 months forward from today). The app only ever updates the Status cell for the matching row — no row creation, no deletion during normal use.
+
+Sheet structure (Log tab):
+  Date | Block ID | Activity | Time | Status | Note
+
+Three additional view tabs (created by running setupViews() once):
+- Daily  — auto-filtered view of today's blocks (Time / Activity / Status / Note)
+- Weekly — 14-block grid with Mon-Fri columns, status color-coded
+- Monthly — one row per day logged, with Done / Skipped / Work / Later counts and % Done
+
+Status color coding in all sheets:
+  done = green, skip = red, work = yellow, later = blue
 
 ---
 
-**Next time you're here**, just tell me the sync is working or not and we'll close that last gap. After that the only thing left is uploading updated versions to GitHub when your blocks change.
+**AppsScript setup (do this when deploying fresh or after script changes):**
+
+1. Open script.google.com -> your TERMINATOR project
+2. Paste the full contents of the AppsScript file from this repo
+3. Save -> Deploy -> New version (keep the same URL)
+4. In the editor, run setupSheet() — populates Log with 3 months of weekday rows
+5. Run setupViews() — creates/recreates the Daily, Weekly, Monthly sheets
+6. Both functions are safe to re-run at any time (setupSheet preserves existing statuses)
+
+---
+
+**Known issues fixed in session 2:**
+- Every button click was creating a new row (root cause: UTC timezone mismatch in date comparison + race condition from concurrent POSTs)
+- Fixed with: spreadsheet timezone in toDateStr(), LockService in doPost(), debounce on frontend, pre-populated sheet approach
+- Sheet was unreadable (all clicks logged as separate rows) — fixed with long format + per-block upsert -> then pre-populated sheet
+
+**Remaining / future work:**
+- Notes feature: Note column already exists in the sheet — user can type notes manually now. Wiring notes to the app (a text input per block) is a future task.
+- The Monthly view only shows days that have at least one status logged (blank days don't appear). This is intentional.
+- If 3 months runs out, re-run setupSheet() to regenerate forward.
+
+---
+
+**App is live at:** alexkeller680.github.io/terminator
