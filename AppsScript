@@ -87,11 +87,11 @@ function setupSheet() {
   var lastRow = sheet.getLastRow();
   if (lastRow > 1) sheet.deleteRows(2, lastRow - 1);
 
-  // Generate rows: 30 days back, 150 days forward (~6 months), weekdays only
+  // Generate rows: 30 days back, 60 days forward (~3 months), weekdays only
   var rows  = [];
   var start = new Date();
   start.setDate(start.getDate() - 30);
-  for (var d = 0; d < 180; d++) {
+  for (var d = 0; d < 90; d++) {
     var date = new Date(start.getTime());
     date.setDate(start.getDate() + d);
     if (date.getDay() === 0 || date.getDay() === 6) continue;
@@ -126,6 +126,7 @@ function formatLogSheet(sheet) {
   var lastRow = Math.max(sheet.getLastRow(), 2);
 
   sheet.getRange(1, 1, 1, 6)
+    .setValues([['Date', 'Block ID', 'Activity', 'Time', 'Status', 'Note']])
     .setBackground('#263238').setFontColor('#FFFFFF')
     .setFontWeight('bold').setFontSize(10);
 
