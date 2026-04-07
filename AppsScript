@@ -1,26 +1,26 @@
 // Block metadata — must match the app config
 var BLOCKS = [
-  {id:'prog_1', name:'Programming Ω',  time:'06:00–07:00', cat:'Mental'  },
-  {id:'es_1',   name:'Spanish',         time:'07:00 · 15m',  cat:'Spanish' },
-  {id:'re_1',   name:'Reading',         time:'07:15 · 15m',  cat:'Reading' },
-  {id:'biz_1',  name:'Biz',             time:'07:30–08:30', cat:'Biz'     },
-  {id:'cc_1',   name:'Cold Calling',    time:'09:00–11:00', cat:'Work'    },
-  {id:'es_2',   name:'Spanish',         time:'11:45 · 15m',  cat:'Spanish' },
-  {id:'re_2',   name:'Reading',         time:'11:30 · 15m',  cat:'Reading' },
-  {id:'re_3',   name:'Reading',         time:'14:00 · 15m',  cat:'Reading' },
-  {id:'es_3',   name:'Spanish',         time:'14:15 · 15m',  cat:'Spanish' },
-  {id:'gym_1',  name:'Gym / Cardio',    time:'16:00–18:00', cat:'Gym'     },
-  {id:'biz_2',  name:'Biz',             time:'18:00–20:00', cat:'Biz'     },
-  {id:'es_4',   name:'Spanish',         time:'20:00 · 15m',  cat:'Spanish' },
-  {id:'re_4',   name:'Reading',         time:'20:15 · 15m',  cat:'Reading' },
-  {id:'prog_2', name:'Programming Ω',  time:'21:00–22:00', cat:'Mental'  },
+  {id:'prog_1', name:'Programming Ω', time:'06:00–07:00'},
+  {id:'es_1',   name:'Spanish',        time:'07:00 · 15m' },
+  {id:'re_1',   name:'Reading',        time:'07:15 · 15m' },
+  {id:'biz_1',  name:'Biz',            time:'07:30–08:30'},
+  {id:'cc_1',   name:'Cold Calling',   time:'09:00–11:00'},
+  {id:'es_2',   name:'Spanish',        time:'11:45 · 15m' },
+  {id:'re_2',   name:'Reading',        time:'11:30 · 15m' },
+  {id:'re_3',   name:'Reading',        time:'14:00 · 15m' },
+  {id:'es_3',   name:'Spanish',        time:'14:15 · 15m' },
+  {id:'gym_1',  name:'Gym / Cardio',   time:'16:00–18:00'},
+  {id:'biz_2',  name:'Biz',            time:'18:00–20:00'},
+  {id:'es_4',   name:'Spanish',        time:'20:00 · 15m' },
+  {id:'re_4',   name:'Reading',        time:'20:15 · 15m' },
+  {id:'prog_2', name:'Programming Ω', time:'21:00–22:00'},
 ];
 
 function doGet(e) {
   var sheet = getSheet();
   var data = sheet.getDataRange().getValues();
   var result = {};
-  // Columns: Date(0) | Activity(1) | Time(2) | Category(3) | Status(4) | Note(5)
+  // Columns: Date(0) | Block ID(1) | Activity(2) | Time(3) | Status(4) | Note(5)
   for (var i = 1; i < data.length; i++) {
     if (!data[i][0]) continue;
     var dateStr = toDateStr(data[i][0]);
@@ -43,27 +43,42 @@ function doPost(e) {
     var dateKey = payload.date;
     var dayLog  = payload.log || {};
 
-    // Delete all existing rows for this date (in reverse to keep indices valid)
+    // Build lookup: "date|blockId" -> 1-based row index
     var data = sheet.getDataRange().getValues();
-    for (var i = data.length - 1; i >= 1; i--) {
-      if (data[i][0] && toDateStr(data[i][0]) === dateKey) {
-        sheet.deleteRow(i + 1);
-      }
+    var existing = {};
+    for (var i = 1; i < data.length; i++) {
+      if (!data[i][0] || !data[i][1]) continue;
+      existing[toDateStr(data[i][0]) + '|' + data[i][1]] = i + 1;
     }
 
-    // Build rows for every block that has a status logged
-    var rows = [];
+    var toDelete = [];
+    var toInsert = [];
+
     for (var j = 0; j < BLOCKS.length; j++) {
       var b      = BLOCKS[j];
       var status = dayLog[b.id] || '';
-      if (!status) continue; // skip un-logged blocks
-      rows.push([dateKey, b.id, b.name, b.time, b.cat, status, '']); // Note col empty
+      var key    = dateKey + '|' + b.id;
+      var row    = existing[key];
+
+      if (status) {
+        if (row) {
+          sheet.getRange(row, 5).setValue(status); // update Status col
+        } else {
+          toInsert.push([dateKey, b.id, b.name, b.time, status, '']);
+        }
+      } else if (row) {
+        toDelete.push(row); // status removed — delete row
+      }
     }
 
-    // Batch-write all rows in one API call
-    if (rows.length > 0) {
+    // Delete in reverse so row indices stay valid
+    toDelete.sort(function(a, b) { return b - a; });
+    for (var k = 0; k < toDelete.length; k++) sheet.deleteRow(toDelete[k]);
+
+    // Batch-insert new rows
+    if (toInsert.length > 0) {
       var startRow = sheet.getLastRow() + 1;
-      sheet.getRange(startRow, 1, rows.length, rows[0].length).setValues(rows);
+      sheet.getRange(startRow, 1, toInsert.length, toInsert[0].length).setValues(toInsert);
     }
 
     return ContentService.createTextOutput(JSON.stringify({ok:true}))
@@ -83,14 +98,12 @@ function getSheet() {
   var s  = ss.getSheetByName('Log');
   if (!s) {
     s = ss.insertSheet('Log');
-    s.appendRow(['Date', 'Block ID', 'Activity', 'Time', 'Category', 'Status', 'Note']);
+    s.appendRow(['Date', 'Block ID', 'Activity', 'Time', 'Status', 'Note']);
     s.setFrozenRows(1);
   }
   return s;
 }
 
-// Safely convert a cell value to yyyy-MM-dd string.
-// Uses the spreadsheet's own timezone so date comparisons are consistent.
 function toDateStr(val) {
   if (val instanceof Date) {
     var tz = SpreadsheetApp.getActiveSpreadsheet().getSpreadsheetTimeZone();
