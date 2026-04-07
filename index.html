@@ -550,32 +550,38 @@ function doGet(e) {
 }
 
 function doPost(e) {
-  var payload = JSON.parse(e.postData.contents);
-  var sheet = getSheet();
-  var data = sheet.getDataRange().getValues();
-  var dateKey = payload.date;
-  var dayLog = payload.log || {};
+  var lock = LockService.getScriptLock();
+  lock.waitLock(15000);
+  try {
+    var payload = JSON.parse(e.postData.contents);
+    var sheet = getSheet();
+    var data = sheet.getDataRange().getValues();
+    var dateKey = payload.date;
+    var dayLog = payload.log || {};
 
-  // Collect all row indices matching this date (duplicates from old bug)
-  var matchingRows = [];
-  for (var i = 1; i < data.length; i++) {
-    if (toDateStr(data[i][0]) === dateKey) matchingRows.push(i + 1);
-  }
-
-  var rowData = BLOCK_IDS.map(function(id) { return dayLog[id] || ''; });
-
-  if (matchingRows.length === 0) {
-    sheet.appendRow([dateKey].concat(rowData));
-  } else {
-    // Update the first matching row
-    sheet.getRange(matchingRows[0], 2, 1, rowData.length).setValues([rowData]);
-    // Delete any duplicate rows (iterate in reverse to preserve indices)
-    for (var k = matchingRows.length - 1; k >= 1; k--) {
-      sheet.deleteRow(matchingRows[k]);
+    // Collect all row indices matching this date (duplicates from old bug)
+    var matchingRows = [];
+    for (var i = 1; i < data.length; i++) {
+      if (toDateStr(data[i][0]) === dateKey) matchingRows.push(i + 1);
     }
+
+    var rowData = BLOCK_IDS.map(function(id) { return dayLog[id] || ''; });
+
+    if (matchingRows.length === 0) {
+      sheet.appendRow([dateKey].concat(rowData));
+    } else {
+      // Update the first matching row
+      sheet.getRange(matchingRows[0], 2, 1, rowData.length).setValues([rowData]);
+      // Delete any duplicate rows (iterate in reverse to preserve indices)
+      for (var k = matchingRows.length - 1; k >= 1; k--) {
+        sheet.deleteRow(matchingRows[k]);
+      }
+    }
+    return ContentService.createTextOutput(JSON.stringify({ok:true}))
+      .setMimeType(ContentService.MimeType.JSON);
+  } finally {
+    lock.releaseLock();
   }
-  return ContentService.createTextOutput(JSON.stringify({ok:true}))
-    .setMimeType(ContentService.MimeType.JSON);
 }
 
 function getSheet() {
@@ -638,10 +644,20 @@ async function syncFromDrive() {
   }
 }
 
-async function syncToDrive(dateStr) {
-  if (!scriptUrl) return;
+let _syncTimer = null;
+let _pendingSyncDate = null;
+
+function syncToDrive(dateStr) {
+  _pendingSyncDate = dateStr;
+  clearTimeout(_syncTimer);
+  setSyncState('syncing');
+  _syncTimer = setTimeout(() => _flushSync(), 1200);
+}
+
+async function _flushSync() {
+  const dateStr = _pendingSyncDate;
+  if (!scriptUrl || !dateStr) return;
   try {
-    setSyncState('syncing');
     await fetch(scriptUrl, {
       method: 'POST',
       mode: 'no-cors',
