@@ -1,9 +1,16 @@
+var BLOCK_IDS = ['prog_1','es_1','re_1','biz_1','cc_1','es_2','re_2','re_3','es_3','gym_1','biz_2','es_4','re_4','prog_2'];
+
 function doGet(e) {
   var sheet = getSheet();
   var data = sheet.getDataRange().getValues();
   var result = {};
   for (var i = 1; i < data.length; i++) {
-    if (data[i][0]) result[data[i][0]] = JSON.parse(data[i][1] || '{}');
+    if (!data[i][0]) continue;
+    var dateStr = toDateStr(data[i][0]);
+    result[dateStr] = {};
+    for (var j = 0; j < BLOCK_IDS.length; j++) {
+      if (data[i][j + 1]) result[dateStr][BLOCK_IDS[j]] = data[i][j + 1];
+    }
   }
   return ContentService.createTextOutput(JSON.stringify({ok:true, data:result}))
     .setMimeType(ContentService.MimeType.JSON);
@@ -14,15 +21,26 @@ function doPost(e) {
   var sheet = getSheet();
   var data = sheet.getDataRange().getValues();
   var dateKey = payload.date;
-  var dayLog = JSON.stringify(payload.log);
+  var dayLog = payload.log || {};
+
+  // Collect all row indices matching this date (duplicates from old bug)
+  var matchingRows = [];
   for (var i = 1; i < data.length; i++) {
-    if (data[i][0] === dateKey) {
-      sheet.getRange(i+1, 2).setValue(dayLog);
-      return ContentService.createTextOutput(JSON.stringify({ok:true}))
-        .setMimeType(ContentService.MimeType.JSON);
+    if (toDateStr(data[i][0]) === dateKey) matchingRows.push(i + 1);
+  }
+
+  var rowData = BLOCK_IDS.map(function(id) { return dayLog[id] || ''; });
+
+  if (matchingRows.length === 0) {
+    sheet.appendRow([dateKey].concat(rowData));
+  } else {
+    // Update the first matching row
+    sheet.getRange(matchingRows[0], 2, 1, rowData.length).setValues([rowData]);
+    // Delete any duplicate rows (iterate in reverse to preserve indices)
+    for (var k = matchingRows.length - 1; k >= 1; k--) {
+      sheet.deleteRow(matchingRows[k]);
     }
   }
-  sheet.appendRow([dateKey, dayLog]);
   return ContentService.createTextOutput(JSON.stringify({ok:true}))
     .setMimeType(ContentService.MimeType.JSON);
 }
@@ -37,7 +55,17 @@ function getSheet() {
   var s = ss.getSheetByName('Log');
   if (!s) {
     s = ss.insertSheet('Log');
-    s.appendRow(['date','log']);
+    s.appendRow(['date'].concat(BLOCK_IDS));
   }
   return s;
+}
+
+// Safely convert a cell value to yyyy-MM-dd string.
+// Uses the spreadsheet's own timezone so date comparisons are consistent.
+function toDateStr(val) {
+  if (val instanceof Date) {
+    var tz = SpreadsheetApp.getActiveSpreadsheet().getSpreadsheetTimeZone();
+    return Utilities.formatDate(val, tz, 'yyyy-MM-dd');
+  }
+  return String(val).slice(0, 10);
 }
