@@ -87,10 +87,9 @@ function setupSheet() {
   var lastRow = sheet.getLastRow();
   if (lastRow > 1) sheet.deleteRows(2, lastRow - 1);
 
-  // Generate rows: 30 days back, 60 days forward (~3 months), weekdays only
+  // Generate rows: today + 90 days forward (~3 months), weekdays only
   var rows  = [];
   var start = new Date();
-  start.setDate(start.getDate() - 30);
   for (var d = 0; d < 90; d++) {
     var date = new Date(start.getTime());
     date.setDate(start.getDate() + d);
