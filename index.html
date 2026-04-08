@@ -105,7 +105,7 @@ main { padding: 20px 20px 100px; max-width: 620px; width: 100%; }
     position: static; background: transparent;
     gap: 0;
   }
-  .logo { font-size: 22px; margin-bottom: 32px; white-space: nowrap; overflow: visible; }
+  .logo { font-size: 18px; letter-spacing: 0.04em; margin-bottom: 32px; white-space: nowrap; overflow: visible; }
   .sync-btn { font-size: 12px; margin-bottom: 10px; }
   .settings-btn { margin-top: 8px; }
   nav {
@@ -160,31 +160,36 @@ main { padding: 20px 20px 100px; max-width: 620px; width: 100%; }
 /* ── PROGRESS BAR ── */
 .progress-wrap {
   background: var(--surface); border: 1px solid var(--border);
-  border-radius: var(--r); padding: 18px 20px; margin-bottom: 20px;
+  border-radius: var(--r); padding: 22px 24px; margin-bottom: 24px;
 }
 .progress-top {
-  display: flex; justify-content: space-between; align-items: baseline;
-  margin-bottom: 12px;
+  display: flex; align-items: center; gap: 20px; margin-bottom: 16px;
 }
-.progress-label { font-family: var(--hf); font-size: 15px; font-weight: 700; }
-.progress-count { font-size: 12px; color: var(--muted2); }
+.progress-pct {
+  font-family: var(--hf); font-size: 54px; font-weight: 800;
+  color: var(--accent); line-height: 1; flex-shrink: 0; letter-spacing: -0.02em;
+}
+.progress-pct sup { font-size: 26px; font-weight: 700; vertical-align: super; letter-spacing: 0; }
+.progress-meta { flex: 1; min-width: 0; }
+.progress-label { font-family: var(--hf); font-size: 17px; font-weight: 700; line-height: 1.2; }
+.progress-count { font-size: 13px; color: var(--muted2); margin-top: 5px; }
 .progress-bar-bg {
-  height: 7px; background: var(--surface2); border-radius: 4px; overflow: hidden;
+  height: 10px; background: var(--surface2); border-radius: 5px; overflow: hidden;
 }
 .progress-bar-fill {
-  height: 100%; border-radius: 4px;
+  height: 100%; border-radius: 5px;
   background: linear-gradient(90deg, var(--accent) 0%, #a0e030 100%);
   transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .progress-cats {
-  display: flex; gap: 12px; margin-top: 14px; flex-wrap: wrap;
+  display: flex; gap: 14px; margin-top: 16px; flex-wrap: wrap;
 }
 .pcat {
   display: flex; align-items: center; gap: 6px;
-  font-size: 11px; color: var(--muted2);
+  font-size: 12px; color: var(--muted2);
 }
-.pcat-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
-.pcat-val { color: var(--text); }
+.pcat-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.pcat-val { color: var(--text); font-weight: 500; }
 
 /* ── TIMELINE ── */
 .timeline { position: relative; }
@@ -999,8 +1004,11 @@ function renderToday(app) {
     html += `
       <div class="progress-wrap">
         <div class="progress-top">
-          <div class="progress-label">${allDone?'🔥 All done':'Today\'s progress'}</div>
-          <div class="progress-count">${comp.done} / ${comp.total}</div>
+          <div class="progress-pct">${comp.pct}<sup>%</sup></div>
+          <div class="progress-meta">
+            <div class="progress-label">${allDone?'🔥 All done!':'Today\'s progress'}</div>
+            <div class="progress-count">${comp.done} done · ${comp.total-comp.done} remaining</div>
+          </div>
         </div>
         <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${comp.pct}%"></div></div>
         <div class="progress-cats">${catHtml}</div>

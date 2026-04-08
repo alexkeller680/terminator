@@ -72,28 +72,22 @@ function doOptions(e) {
 
 // == SETUP (run manually from the Apps Script editor) ==
 
-// Step 1: Populate the Log sheet with all weekday rows.
-// Safe to re-run -- preserves existing statuses and notes.
+// Step 1: Extend the Log sheet with upcoming weekday rows.
+// Safe to re-run any time — never deletes or modifies existing data.
 function setupSheet() {
   var ss    = SpreadsheetApp.getActiveSpreadsheet();
   var tz    = ss.getSpreadsheetTimeZone();
   var sheet = getSheet();
 
-  // Preserve existing statuses and notes before clearing
-  var saved = {};
-  var existing = sheet.getDataRange().getValues();
-  for (var i = 1; i < existing.length; i++) {
-    if (!existing[i][0] || !existing[i][1]) continue;
-    var key = toDateStr(existing[i][0]) + '|' + existing[i][1];
-    saved[key] = {status: existing[i][4] || '', note: existing[i][5] || ''};
+  // Build a set of existing date|blockId keys so we never duplicate
+  var existingKeys = {};
+  var data = sheet.getDataRange().getValues();
+  for (var i = 1; i < data.length; i++) {
+    if (!data[i][0] || !data[i][1]) continue;
+    existingKeys[toDateStr(data[i][0]) + '|' + data[i][1]] = true;
   }
 
-  // Clear data rows (keep header + at least one row — Sheets requires it)
-  var lastRow = sheet.getLastRow();
-  if (lastRow > 2) sheet.deleteRows(3, lastRow - 2);
-  if (lastRow >= 2) sheet.getRange(2, 1, 1, 6).clearContent();
-
-  // Generate rows: today + 90 days forward (~3 months), weekdays only
+  // Append rows for today + 90 days forward (weekdays only), skipping any that already exist
   var rows  = [];
   var start = new Date();
   for (var d = 0; d < 90; d++) {
@@ -103,17 +97,20 @@ function setupSheet() {
     var dateStr = Utilities.formatDate(date, tz, 'yyyy-MM-dd');
     for (var j = 0; j < BLOCKS.length; j++) {
       var b   = BLOCKS[j];
-      var rec = saved[dateStr + '|' + b.id] || {};
-      rows.push([dateStr, b.id, b.name, b.time, rec.status || '', rec.note || '']);
+      var key = dateStr + '|' + b.id;
+      if (!existingKeys[key]) {
+        rows.push([dateStr, b.id, b.name, b.time, '', '']);
+        existingKeys[key] = true; // prevent dupes within this run
+      }
     }
   }
 
   if (rows.length > 0) {
-    sheet.getRange(2, 1, rows.length, 6).setValues(rows);
+    sheet.getRange(sheet.getLastRow() + 1, 1, rows.length, 6).setValues(rows);
   }
 
   formatLogSheet(sheet);
-  SpreadsheetApp.getUi().alert('Done! Log sheet has ' + rows.length + ' rows.\n\nNow run setupViews() to create the Daily / Weekly / Monthly sheets.');
+  SpreadsheetApp.getUi().alert('Done! Added ' + rows.length + ' new rows (existing data untouched).\n\nRun setupViews() to refresh the Daily / Weekly / Monthly sheets.');
 }
 
 // Step 2: Create the three view sheets.
