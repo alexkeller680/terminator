@@ -19,19 +19,23 @@ var BLOCKS = [
 // == WEB APP ENDPOINTS ==
 
 function doGet(e) {
-  var sheet  = getSheet();
-  var data   = sheet.getDataRange().getValues();
-  var result = {};
+  var sheet    = getSheet();
+  var data     = sheet.getDataRange().getValues();
+  var result   = {};
+  var notesOut = {};
   // Columns: Date(0) | Block ID(1) | Activity(2) | Time(3) | Status(4) | Note(5)
   for (var i = 1; i < data.length; i++) {
     if (!data[i][0] || !data[i][1]) continue;
     var dateStr = toDateStr(data[i][0]);
     var blockId = data[i][1];
     var status  = data[i][4];
-    if (!result[dateStr]) result[dateStr] = {};
-    if (status) result[dateStr][blockId] = status;
+    var note    = String(data[i][5] || '');
+    if (!result[dateStr])   result[dateStr]   = {};
+    if (!notesOut[dateStr]) notesOut[dateStr] = {};
+    if (status) result[dateStr][blockId]   = status;
+    if (note)   notesOut[dateStr][blockId] = note;
   }
-  return ContentService.createTextOutput(JSON.stringify({ok:true, data:result}))
+  return ContentService.createTextOutput(JSON.stringify({ok:true, data:result, notes:notesOut}))
     .setMimeType(ContentService.MimeType.JSON);
 }
 
@@ -39,18 +43,19 @@ function doPost(e) {
   var lock = LockService.getScriptLock();
   lock.waitLock(15000);
   try {
-    var payload = JSON.parse(e.postData.contents);
-    var sheet   = getSheet();
-    var dateKey = payload.date;
-    var dayLog  = payload.log || {};
+    var payload  = JSON.parse(e.postData.contents);
+    var sheet    = getSheet();
+    var dateKey  = payload.date;
+    var dayLog   = payload.log   || {};
+    var dayNotes = payload.notes || {};
 
     var data = sheet.getDataRange().getValues();
     for (var i = 1; i < data.length; i++) {
       if (!data[i][0] || !data[i][1]) continue;
       if (toDateStr(data[i][0]) !== dateKey) continue;
       var blockId = data[i][1];
-      if (!(blockId in dayLog)) continue;
-      sheet.getRange(i + 1, 5).setValue(dayLog[blockId] || '');
+      if (blockId in dayLog)   sheet.getRange(i + 1, 5).setValue(dayLog[blockId]   || '');
+      if (blockId in dayNotes) sheet.getRange(i + 1, 6).setValue(dayNotes[blockId] || '');
     }
 
     return ContentService.createTextOutput(JSON.stringify({ok:true}))
