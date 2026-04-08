@@ -94,18 +94,18 @@ main { padding: 20px 20px 100px; max-width: 620px; width: 100%; }
   .app-shell { flex-direction: row; align-items: flex-start; min-height: 100vh; }
   .sidebar {
     display: flex; flex-direction: column;
-    width: 240px; flex-shrink: 0;
+    width: 280px; flex-shrink: 0;
     height: 100vh; position: sticky; top: 0;
     border-right: 1px solid var(--border);
     overflow: hidden;
   }
   header {
     flex-direction: column; align-items: flex-start;
-    padding: 40px 28px 24px; border-bottom: none;
+    padding: 40px 24px 24px; border-bottom: none;
     position: static; background: transparent;
     gap: 0;
   }
-  .logo { font-size: 22px; margin-bottom: 32px; }
+  .logo { font-size: 22px; margin-bottom: 32px; white-space: nowrap; overflow: visible; }
   .sync-btn { font-size: 12px; margin-bottom: 10px; }
   .settings-btn { margin-top: 8px; }
   nav {
@@ -115,7 +115,7 @@ main { padding: 20px 20px 100px; max-width: 620px; width: 100%; }
   }
   nav button {
     text-align: left; border-radius: 10px;
-    padding: 12px 18px; font-size: 14px;
+    padding: 13px 20px; font-size: 15px;
   }
   main {
     flex: 1;
@@ -124,14 +124,17 @@ main { padding: 20px 20px 100px; max-width: 620px; width: 100%; }
     display: flex; justify-content: center;
   }
   #app {
-    width: 100%; max-width: 760px;
-    padding: 0 48px;
+    width: 100%; max-width: 900px;
+    padding: 0 52px;
   }
-  .tl-card { padding: 18px 20px; }
+  .progress-wrap { padding: 22px 24px; margin-bottom: 28px; }
+  .progress-label { font-size: 17px; }
+  .progress-bar-bg { height: 9px; }
+  .tl-card { padding: 20px 22px; }
   .tl-block-name { font-size: 18px; }
   .tl-block-meta { font-size: 12px; margin-top: 5px; }
   .tl-actions { margin-top: 14px; gap: 8px; }
-  .act-btn { height: 54px; border-radius: 10px; font-size: 16px; }
+  .act-btn { height: 56px; border-radius: 10px; font-size: 17px; }
   .act-lbl { font-size: 10px; }
   .tl-time { width: 60px; padding-top: 20px; font-size: 12px; }
   .tl-dot-wrap { padding-top: 24px; }
@@ -450,6 +453,94 @@ body.overlay-open { overflow: hidden; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
 #script-block pre::-webkit-scrollbar { width: 3px; height: 3px; }
+
+/* ── FOCUS CARD ── */
+.focus-card {
+  background: var(--surface); border: 1px solid var(--border2);
+  border-radius: 18px; padding: 28px 28px 24px; margin-bottom: 20px;
+}
+.focus-card.current-card { border-color: rgba(200,240,96,0.45); background: rgba(200,240,96,0.03); }
+.focus-card.state-done { border-left: 4px solid var(--done); }
+.focus-card.state-skip { border-left: 4px solid var(--skip); }
+.focus-card.state-later { border-left: 4px solid var(--later); }
+.focus-card.state-yes { border-left: 4px solid var(--done); }
+.focus-badge {
+  display: inline-flex; align-items: center;
+  font-size: 11px; background: var(--accent-dim); border: 1px solid var(--accent);
+  color: var(--accent); padding: 4px 12px; border-radius: 20px;
+  letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 20px;
+}
+.focus-nav-row {
+  display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px;
+}
+.focus-nav-btn {
+  background: none; border: 1px solid var(--border); color: var(--muted);
+  width: 36px; height: 36px; border-radius: 9px; cursor: pointer;
+  font-size: 18px; display: flex; align-items: center; justify-content: center;
+  transition: all 0.15s;
+}
+.focus-nav-btn:hover { border-color: var(--accent); color: var(--accent); }
+.focus-counter { font-size: 12px; color: var(--muted2); letter-spacing: 0.06em; }
+.focus-block-name {
+  font-family: var(--hf); font-size: 30px; font-weight: 800;
+  color: var(--text); line-height: 1.15; margin-bottom: 8px;
+}
+.focus-block-meta { font-size: 14px; color: var(--muted2); letter-spacing: 0.03em; margin-bottom: 4px; }
+.focus-actions { display: flex; gap: 10px; margin: 26px 0 0; }
+.focus-act-btn {
+  flex: 1; height: 68px; border-radius: 14px;
+  border: 1px solid var(--border); background: none;
+  cursor: pointer; font-size: 22px;
+  transition: all 0.12s;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px;
+}
+.focus-act-lbl { font-size: 11px; letter-spacing: 0.06em; color: var(--muted); font-family: var(--mf); line-height: 1; }
+.focus-act-btn:active { transform: scale(0.95); }
+.focus-act-btn.a-done:hover, .focus-act-btn.a-done.active { background: rgba(200,240,96,0.15); border-color: var(--done); color: var(--done); }
+.focus-act-btn.a-skip:hover, .focus-act-btn.a-skip.active { background: rgba(255,68,68,0.15); border-color: var(--skip); color: var(--skip); }
+.focus-act-btn.a-later:hover, .focus-act-btn.a-later.active { background: rgba(96,184,240,0.15); border-color: var(--later); color: var(--later); }
+.focus-act-btn:hover .focus-act-lbl, .focus-act-btn.active .focus-act-lbl { color: currentColor; }
+.focus-simple-row {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-top: 24px; padding: 14px 0;
+}
+.focus-simple-label { font-size: 14px; color: var(--muted2); }
+
+/* ── NOTE FIELD ── */
+.note-wrap { margin-top: 22px; }
+.note-lbl { font-size: 11px; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 8px; }
+.note-field {
+  width: 100%; background: var(--bg); border: 1px solid var(--border);
+  color: var(--text); font-family: var(--mf); font-size: 13px;
+  padding: 12px 14px; border-radius: 10px; outline: none;
+  resize: none; min-height: 76px; line-height: 1.6;
+  transition: border-color 0.15s;
+}
+.note-field:focus { border-color: var(--accent); }
+.note-field::placeholder { color: var(--muted); }
+
+/* ── DOT NAV ── */
+.focus-dots { display: flex; gap: 7px; justify-content: center; margin-bottom: 20px; flex-wrap: wrap; }
+.focus-dot {
+  width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+  background: var(--border2); border: none; cursor: pointer;
+  transition: all 0.15s; padding: 0;
+}
+.focus-dot.active-dot { width: 22px; border-radius: 4px; background: var(--accent); }
+.focus-dot.dot-done { background: var(--done); }
+.focus-dot.dot-skip { background: var(--skip); }
+.focus-dot.dot-later { background: var(--later); }
+.focus-dot.dot-yes { background: var(--done); }
+
+/* ── TOGGLE ALL TASKS ── */
+.toggle-all-btn {
+  background: none; border: 1px solid var(--border); color: var(--muted2);
+  font-family: var(--mf); font-size: 12px; letter-spacing: 0.05em;
+  padding: 9px 20px; border-radius: 20px; cursor: pointer;
+  display: flex; align-items: center; gap: 6px; margin: 0 auto 28px;
+  transition: all 0.15s;
+}
+.toggle-all-btn:hover { border-color: var(--border2); color: var(--text); }
 </style>
 </head>
 <body>
@@ -530,10 +621,13 @@ BLOCKS.sort((a,b) => a.timeNum - b.timeNum);
 
 /* ── STORAGE ── */
 const LS_LOG   = 'trm_log_v1';
+const LS_NOTES = 'trm_notes_v1';
 const LS_URL   = 'trm_script_url';
 const LS_SKIP  = 'trm_skip_sync';
 
 let log = {};
+let notes = {};
+let _noteTimers = {};
 let scriptUrl = localStorage.getItem(LS_URL) || '';
 let skipSync  = localStorage.getItem(LS_SKIP) === '1';
 
@@ -543,6 +637,26 @@ function loadLocal() {
 }
 function saveLocal() {
   localStorage.setItem(LS_LOG, JSON.stringify(log));
+}
+function loadNotes() {
+  try { notes = JSON.parse(localStorage.getItem(LS_NOTES)) || {}; }
+  catch { notes = {}; }
+}
+function saveNotes() {
+  localStorage.setItem(LS_NOTES, JSON.stringify(notes));
+}
+function getNote(dStr, id) {
+  return (notes[dStr] && notes[dStr][id]) || '';
+}
+function setNoteDebounced(dStr, id, text) {
+  if (!notes[dStr]) notes[dStr] = {};
+  notes[dStr][id] = text;
+  saveNotes();
+  clearTimeout(_noteTimers[id]);
+  _noteTimers[id] = setTimeout(() => syncToDrive(dStr), 2000);
+}
+function escNote(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/`/g,'&#96;').replace(/\${/g,'&#36;{');
 }
 
 /* ── GOOGLE APPS SCRIPT SYNC ── */
@@ -568,17 +682,21 @@ function doGet(e) {
   var sheet = getSheet();
   var data = sheet.getDataRange().getValues();
   var result = {};
+  var notesOut = {};
   // Columns: Date(0) | Block ID(1) | Activity(2) | Time(3) | Status(4) | Note(5)
   for (var i = 1; i < data.length; i++) {
     if (!data[i][0]) continue;
     var dateStr = toDateStr(data[i][0]);
     var blockId = data[i][1];
     var status  = data[i][4];
+    var note    = String(data[i][5] || '');
     if (!blockId) continue;
     if (!result[dateStr]) result[dateStr] = {};
+    if (!notesOut[dateStr]) notesOut[dateStr] = {};
     if (status) result[dateStr][blockId] = status;
+    if (note) notesOut[dateStr][blockId] = note;
   }
-  return ContentService.createTextOutput(JSON.stringify({ok:true, data:result}))
+  return ContentService.createTextOutput(JSON.stringify({ok:true, data:result, notes:notesOut}))
     .setMimeType(ContentService.MimeType.JSON);
 }
 
@@ -586,10 +704,11 @@ function doPost(e) {
   var lock = LockService.getScriptLock();
   lock.waitLock(15000);
   try {
-    var payload = JSON.parse(e.postData.contents);
-    var sheet   = getSheet();
-    var dateKey = payload.date;
-    var dayLog  = payload.log || {};
+    var payload  = JSON.parse(e.postData.contents);
+    var sheet    = getSheet();
+    var dateKey  = payload.date;
+    var dayLog   = payload.log || {};
+    var dayNotes = payload.notes || {};
 
     // Build lookup: "date|blockId" -> 1-based row index
     var data = sheet.getDataRange().getValues();
@@ -608,11 +727,13 @@ function doPost(e) {
       var key    = dateKey + '|' + b.id;
       var row    = existing[key];
 
+      var note = dayNotes[b.id] || '';
       if (status) {
         if (row) {
-          sheet.getRange(row, 5).setValue(status); // update Status col
+          sheet.getRange(row, 5).setValue(status);
+          sheet.getRange(row, 6).setValue(note);
         } else {
-          toInsert.push([dateKey, b.id, b.name, b.time, status, '']);
+          toInsert.push([dateKey, b.id, b.name, b.time, status, note]);
         }
       } else if (row) {
         toDelete.push(row); // status removed — delete row
@@ -683,7 +804,9 @@ async function syncFromDrive() {
     const json = await res.json();
     if (json.ok && json.data) {
       Object.assign(log, json.data);
+      if (json.notes) Object.assign(notes, json.notes);
       saveLocal();
+      saveNotes();
       setSyncState('synced');
     } else {
       console.error('Sync unexpected response:', json);
@@ -712,7 +835,7 @@ async function _flushSync() {
     await fetch(scriptUrl, {
       method: 'POST',
       mode: 'no-cors',
-      body: JSON.stringify({ date: dateStr, log: log[dateStr] || {} }),
+      body: JSON.stringify({ date: dateStr, log: log[dateStr] || {}, notes: notes[dateStr] || {} }),
     });
     setSyncState('synced');
   } catch(e) {
@@ -786,6 +909,8 @@ function getMonday(d) {
 /* ── STATE ── */
 let view = 'today';
 let todayOff = 0, weekOff = 0, monthOff = 0;
+let focusIdx = -1;      // -1 = auto (pick by time / first uncompleted)
+let showAllTasks = false;
 
 function countsDone(s) { return s==='done'||s==='later'||s==='yes'; }
 function getState(dStr, id) { return (log[dStr]&&log[dStr][id])||null; }
@@ -830,27 +955,24 @@ function render() {
 }
 
 /* ══════════════════════════════════════════════
-   TODAY VIEW — chronological timeline
+   TODAY VIEW — focus card + all-tasks toggle
 ══════════════════════════════════════════════ */
 function renderToday(app) {
-  const vDate = addDays(today(), todayOff);
-  const dow   = vDate.getDay();
-  const dStr  = dateKey(vDate);
+  const vDate   = addDays(today(), todayOff);
+  const dow     = vDate.getDay();
+  const dStr    = dateKey(vDate);
   const isToday = todayOff === 0;
   const isWknd  = dow===0||dow===6;
-
-  // header
-  const dateLbl = vDate.getDate()+' '+MONTHS[vDate.getMonth()]
-    +(isToday?' · Today':'');
+  const dateLbl = vDate.getDate()+' '+MONTHS[vDate.getMonth()]+(isToday?' · Today':'');
 
   let html = `
     <div class="day-nav">
-      <button class="day-nav-btn" onclick="todayOff--;render()">‹</button>
+      <button class="day-nav-btn" onclick="todayOff--;focusIdx=-1;showAllTasks=false;render()">‹</button>
       <div class="day-center">
         <div class="day-name">${DAYS[dow]}</div>
         <div class="day-date">${dateLbl}</div>
       </div>
-      <button class="day-nav-btn" onclick="todayOff++;render()">›</button>
+      <button class="day-nav-btn" onclick="todayOff++;focusIdx=-1;showAllTasks=false;render()">›</button>
     </div>`;
 
   if (isWknd) {
@@ -861,11 +983,14 @@ function renderToday(app) {
     app.innerHTML = html; return;
   }
 
-  // progress bar
+  const dayBlocks = BLOCKS.filter(b=>b.days.includes(dow)).sort((a,b)=>a.timeNum-b.timeNum);
+  const n = dayBlocks.length;
+
+  // Progress bar
   const comp = dayComp(dStr, dow);
   if (comp) {
     const cats = [...new Set(BLOCKS.map(b=>b.cat))];
-    let catHtml = cats.map(cat => {
+    const catHtml = cats.map(cat => {
       const bs = BLOCKS.filter(b=>b.cat===cat&&b.days.includes(dow));
       const d  = bs.filter(b=>countsDone(getState(dStr,b.id))).length;
       return `<div class="pcat"><div class="pcat-dot" style="background:${catColor(cat)}"></div>${cat}: <span class="pcat-val">${d}/${bs.length}</span></div>`;
@@ -877,76 +1002,158 @@ function renderToday(app) {
           <div class="progress-label">${allDone?'🔥 All done':'Today\'s progress'}</div>
           <div class="progress-count">${comp.done} / ${comp.total}</div>
         </div>
-        <div class="progress-bar-bg">
-          <div class="progress-bar-fill" style="width:${comp.pct}%"></div>
-        </div>
+        <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${comp.pct}%"></div></div>
         <div class="progress-cats">${catHtml}</div>
-      </div>
-      <div class="legend">
-        <div class="leg-item"><div class="leg-dot" style="background:var(--done)"></div>Done</div>
-        <div class="leg-item"><div class="leg-dot" style="background:var(--skip)"></div>Skipped</div>
-        <div class="leg-item"><div class="leg-dot" style="background:var(--later)"></div>Did it later</div>
       </div>`;
   }
 
-  // timeline
-  const currentId = isToday ? getCurrentBlockId() : null;
-  const dayBlocks = BLOCKS.filter(b=>b.days.includes(dow)).sort((a,b)=>a.timeNum-b.timeNum);
-
-  html += `<div class="timeline">`;
-  dayBlocks.forEach(b => {
-    const state    = getState(dStr, b.id);
-    const isCur    = isToday && b.id===currentId && !state;
-    const dotClass = state ? (state==='yes'?'done':state) : (isCur?'current':'');
-    const cardClass= `${state?'state-'+(state==='yes'?'done':state):''} ${isCur?'current-card':''}`;
-
-    // time: show only HH part before colon for cleanliness
-    const timeDisplay = b.time.split('–')[0].split('·')[0].trim();
-
-    if (b.type==='simple') {
-      const on = state==='yes';
-      html += `
-        <div class="tl-item">
-          <div class="tl-time">${timeDisplay}</div>
-          <div class="tl-dot-wrap"><div class="tl-dot ${dotClass}"></div></div>
-          <div class="tl-card ${cardClass}">
-            <div class="tl-card-top">
-              <div class="tl-card-info">
-                <div class="tl-block-name">${b.name}</div>
-                <div class="tl-block-meta">${b.time} · ${b.target}</div>
-              </div>
-              ${isCur?'<div class="current-badge">Now</div>':''}
-            </div>
-            <div class="simple-row">
-              <div class="simple-label">${on?'✓ Done':'Not yet'}</div>
-              <button class="toggle ${on?'on':''}"
-                onclick="setState('${dStr}','${b.id}','${on?'null_':''}yes')"></button>
-            </div>
-          </div>
-        </div>`;
+  // Resolve focus index
+  if (focusIdx < 0 || focusIdx >= n) {
+    if (isToday) {
+      const curId = getCurrentBlockId();
+      const ci = dayBlocks.findIndex(b=>b.id===curId);
+      focusIdx = ci !== -1 ? ci : Math.max(0, dayBlocks.findIndex(b=>!getState(dStr,b.id)));
     } else {
-      html += `
-        <div class="tl-item">
-          <div class="tl-time">${timeDisplay}</div>
-          <div class="tl-dot-wrap"><div class="tl-dot ${dotClass}"></div></div>
-          <div class="tl-card ${cardClass}">
-            <div class="tl-card-top">
-              <div class="tl-card-info">
-                <div class="tl-block-name">${b.name}</div>
-                <div class="tl-block-meta">${b.time} · ${b.cat}</div>
-              </div>
-              ${isCur?'<div class="current-badge">Now</div>':''}
-            </div>
-            <div class="tl-actions">
-              <button class="act-btn a-done ${state==='done'?'active':''}" onclick="setState('${dStr}','${b.id}','done')">✓<span class="act-lbl">Done</span></button>
-              <button class="act-btn a-skip ${state==='skip'?'active':''}" onclick="setState('${dStr}','${b.id}','skip')">✗<span class="act-lbl">Skip</span></button>
-              <button class="act-btn a-later ${state==='later'?'active':''}" onclick="setState('${dStr}','${b.id}','later')">↻<span class="act-lbl">Later</span></button>
-            </div>
-          </div>
-        </div>`;
+      const fi = dayBlocks.findIndex(b=>!getState(dStr,b.id));
+      focusIdx = fi !== -1 ? fi : 0;
     }
+  }
+
+  const fb      = dayBlocks[focusIdx];
+  const fState  = getState(dStr, fb.id);
+  const fIsCur  = isToday && fb.id === getCurrentBlockId();
+  const fSClass = fState ? `state-${fState==='yes'?'done':fState}` : (fIsCur?'current-card':'');
+  const fNote   = escNote(getNote(dStr, fb.id));
+
+  // Badge
+  let badgeHtml = '';
+  if (fIsCur && !fState) {
+    badgeHtml = `<div class="focus-badge">NOW</div>`;
+  } else if (fState) {
+    const sc = fState==='done'||fState==='yes' ? 'var(--done)' : fState==='skip' ? 'var(--skip)' : 'var(--later)';
+    const sl = {done:'✓ Done', yes:'✓ Done', skip:'✗ Skipped', later:'↻ Did it later'}[fState]||'';
+    badgeHtml = `<div class="focus-badge" style="border-color:${sc};color:${sc};background:transparent">${sl}</div>`;
+  }
+
+  const prevDis = focusIdx===0 ? 'style="opacity:.3;pointer-events:none"' : '';
+  const nextDis = focusIdx===n-1 ? 'style="opacity:.3;pointer-events:none"' : '';
+
+  html += `<div class="focus-card ${fSClass}">
+    ${badgeHtml}
+    <div class="focus-nav-row">
+      <button class="focus-nav-btn" onclick="focusIdx=${Math.max(0,focusIdx-1)};render()" ${prevDis}>←</button>
+      <div class="focus-counter">${focusIdx+1} / ${n}</div>
+      <button class="focus-nav-btn" onclick="focusIdx=${Math.min(n-1,focusIdx+1)};render()" ${nextDis}>→</button>
+    </div>
+    <div class="focus-block-name">${fb.name}</div>
+    <div class="focus-block-meta">${fb.time} · ${fb.cat}</div>`;
+
+  if (fb.type==='simple') {
+    const on = fState==='yes';
+    html += `
+    <div class="focus-simple-row">
+      <div class="focus-simple-label">${on?'✓ Done':'Target: '+fb.target}</div>
+      <button class="toggle ${on?'on':''}" onclick="setStateFromFocus('${dStr}','${fb.id}','${on?'null_':''}yes',${focusIdx})"></button>
+    </div>`;
+  } else {
+    html += `
+    <div class="focus-actions">
+      <button class="focus-act-btn a-done ${fState==='done'?'active':''}" onclick="setStateFromFocus('${dStr}','${fb.id}','done',${focusIdx})">✓<span class="focus-act-lbl">DONE</span></button>
+      <button class="focus-act-btn a-skip ${fState==='skip'?'active':''}" onclick="setStateFromFocus('${dStr}','${fb.id}','skip',${focusIdx})">✗<span class="focus-act-lbl">SKIP</span></button>
+      <button class="focus-act-btn a-later ${fState==='later'?'active':''}" onclick="setStateFromFocus('${dStr}','${fb.id}','later',${focusIdx})">↻<span class="focus-act-lbl">LATER</span></button>
+    </div>`;
+  }
+
+  html += `
+    <div class="note-wrap">
+      <div class="note-lbl">Note</div>
+      <textarea class="note-field" placeholder="Add a note..."
+        oninput="setNoteDebounced('${dStr}','${fb.id}',this.value)">${fNote}</textarea>
+    </div>
+  </div>`;
+
+  // Dot navigation
+  html += `<div class="focus-dots">`;
+  dayBlocks.forEach((b,i) => {
+    const s = getState(dStr,b.id);
+    const dotCls = i===focusIdx ? 'active-dot' : (s ? `dot-${s==='yes'?'done':s}` : '');
+    html += `<button class="focus-dot ${dotCls}" onclick="focusIdx=${i};render()" title="${b.name}"></button>`;
   });
   html += `</div>`;
+
+  // Toggle all tasks
+  html += `<button class="toggle-all-btn" onclick="showAllTasks=!showAllTasks;render()">${showAllTasks?'▲ Hide tasks':'▼ All tasks'}</button>`;
+
+  // Full timeline (expanded)
+  if (showAllTasks) {
+    html += `
+      <div class="legend" style="margin-bottom:16px">
+        <div class="leg-item"><div class="leg-dot" style="background:var(--done)"></div>Done</div>
+        <div class="leg-item"><div class="leg-dot" style="background:var(--skip)"></div>Skipped</div>
+        <div class="leg-item"><div class="leg-dot" style="background:var(--later)"></div>Did it later</div>
+      </div>
+      <div class="timeline">`;
+    const curId = isToday ? getCurrentBlockId() : null;
+    dayBlocks.forEach(b => {
+      const state     = getState(dStr, b.id);
+      const isCur     = isToday && b.id===curId && !state;
+      const dotClass  = state ? (state==='yes'?'done':state) : (isCur?'current':'');
+      const cardClass = `${state?'state-'+(state==='yes'?'done':state):''} ${isCur?'current-card':''}`;
+      const timeDisp  = b.time.split('–')[0].split('·')[0].trim();
+      const tnote     = escNote(getNote(dStr, b.id));
+      if (b.type==='simple') {
+        const on = state==='yes';
+        html += `
+          <div class="tl-item">
+            <div class="tl-time">${timeDisp}</div>
+            <div class="tl-dot-wrap"><div class="tl-dot ${dotClass}"></div></div>
+            <div class="tl-card ${cardClass}">
+              <div class="tl-card-top">
+                <div class="tl-card-info">
+                  <div class="tl-block-name">${b.name}</div>
+                  <div class="tl-block-meta">${b.time} · ${b.target}</div>
+                </div>
+                ${isCur?'<div class="current-badge">Now</div>':''}
+              </div>
+              <div class="simple-row">
+                <div class="simple-label">${on?'✓ Done':'Not yet'}</div>
+                <button class="toggle ${on?'on':''}" onclick="setState('${dStr}','${b.id}','${on?'null_':''}yes')"></button>
+              </div>
+              <div class="note-wrap" style="margin-top:12px">
+                <textarea class="note-field" style="min-height:54px" placeholder="Note..."
+                  oninput="setNoteDebounced('${dStr}','${b.id}',this.value)">${tnote}</textarea>
+              </div>
+            </div>
+          </div>`;
+      } else {
+        html += `
+          <div class="tl-item">
+            <div class="tl-time">${timeDisp}</div>
+            <div class="tl-dot-wrap"><div class="tl-dot ${dotClass}"></div></div>
+            <div class="tl-card ${cardClass}">
+              <div class="tl-card-top">
+                <div class="tl-card-info">
+                  <div class="tl-block-name">${b.name}</div>
+                  <div class="tl-block-meta">${b.time} · ${b.cat}</div>
+                </div>
+                ${isCur?'<div class="current-badge">Now</div>':''}
+              </div>
+              <div class="tl-actions">
+                <button class="act-btn a-done ${state==='done'?'active':''}" onclick="setState('${dStr}','${b.id}','done')">✓<span class="act-lbl">Done</span></button>
+                <button class="act-btn a-skip ${state==='skip'?'active':''}" onclick="setState('${dStr}','${b.id}','skip')">✗<span class="act-lbl">Skip</span></button>
+                <button class="act-btn a-later ${state==='later'?'active':''}" onclick="setState('${dStr}','${b.id}','later')">↻<span class="act-lbl">Later</span></button>
+              </div>
+              <div class="note-wrap" style="margin-top:12px">
+                <textarea class="note-field" style="min-height:54px" placeholder="Note..."
+                  oninput="setNoteDebounced('${dStr}','${b.id}',this.value)">${tnote}</textarea>
+              </div>
+            </div>
+          </div>`;
+      }
+    });
+    html += `</div>`;
+  }
+
   app.innerHTML = html;
 }
 
@@ -956,6 +1163,35 @@ function setState(dStr, id, newState) {
     log[dStr][id] = null;
   } else {
     log[dStr][id] = newState;
+  }
+  saveLocal();
+  syncToDrive(dStr);
+  render();
+}
+
+function setStateFromFocus(dStr, id, newState, curIdx) {
+  if (!log[dStr]) log[dStr] = {};
+  const toggling = newState.startsWith('null_') || log[dStr][id]===newState;
+  if (toggling) {
+    log[dStr][id] = null;
+    // stay on same card
+    focusIdx = curIdx;
+  } else {
+    log[dStr][id] = newState;
+    // advance to next uncompleted block after this one
+    const dow = addDays(today(), todayOff).getDay();
+    const dayBlocks = BLOCKS.filter(b=>b.days.includes(dow)).sort((a,b)=>a.timeNum-b.timeNum);
+    let next = -1;
+    for (let i = curIdx+1; i < dayBlocks.length; i++) {
+      if (!log[dStr][dayBlocks[i].id]) { next = i; break; }
+    }
+    if (next === -1) {
+      // wrap: find any uncompleted
+      for (let i = 0; i < dayBlocks.length; i++) {
+        if (!log[dStr][dayBlocks[i].id]) { next = i; break; }
+      }
+    }
+    focusIdx = next !== -1 ? next : curIdx;
   }
   saveLocal();
   syncToDrive(dStr);
@@ -1137,6 +1373,7 @@ function renderMonth(app) {
 
 /* ── INIT ── */
 loadLocal();
+loadNotes();
 if (!scriptUrl && !skipSync) showOverlay();
 setSyncState(scriptUrl ? 'syncing' : 'local');
 if (scriptUrl) syncFromDrive().then(render).catch(()=>render());
